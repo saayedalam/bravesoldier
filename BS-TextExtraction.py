@@ -121,7 +121,6 @@ rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
 day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
 day = [int(item) for item in re.findall(r'\d+', str(day))]
 day = pd.DataFrame.from_dict(Counter(day), orient='index').reset_index().rename(columns={'index':'day', 0:'count'})
-
 # Bin the days in to 7 day increment
 day_week = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
 day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
@@ -147,7 +146,6 @@ week.reset_index(inplace=True)
 week['index'] = 'Week ' + week['index'].astype(str)
 week.set_index('index', inplace=True)
 
-
 # Visualizing the months
 plt.style.use('seaborn-whitegrid')
 week.plot(kind='bar', color='salmon', figsize=(20, 10))
@@ -157,25 +155,11 @@ plt.title('Number of times "Week" appeared in the r/leaves')
 plt.xticks(rotation=0)
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # MONTH
 month = list(rleaves.raw.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
 month = [int(item) for item in re.findall(r'\d+', str(month))]
 month = pd.DataFrame.from_dict(Counter(month), orient='index').rename(columns={0:'count'}).sort_index(ascending=True)
-
-month
-
-# # +
-# MONTH
-month = rleaves[rleaves.raw.str.contains(r'\d+ month|month \d+')]
-month = list(month.raw.str.findall(r'\d+ month|month \d+'))
-month = [item[0].split(' ') for item in month]
-month = [' '.join(reversed(item)) for item in month if re.match(r'\d', item[0])]
-month = pd.Series(month)
-month = month.value_counts().to_frame('Counts').reset_index(level=0)
-month.columns = ['Month', 'Counts']
-month['Month'] = month['Month'].str.replace(r'\D', '').astype(int)
-month.set_index('Month', inplace=True)
 
 # Visualizing the months
 plt.style.use('seaborn-whitegrid')
@@ -186,9 +170,30 @@ plt.title("Number of times 'Month' appeared in the r/leaves")
 plt.xticks(rotation=0)
 plt.show()
 
+# +
+# YEAR
+year = rleaves[rleaves.raw.str.contains(r'\d+ year|year \d+')]
+year = list(year.raw.str.findall(r'\d+ year|year \d+'))
+year = [item[0].split(' ') for item in year]
+year = [' '.join(reversed(item)) for item in year if re.match(r'\d', item[0])]
+year = pd.Series(year)
+year = year.value_counts().to_frame('Counts').reset_index(level=0)
+year.columns = ['Year', 'Counts']
+year['Year'] = year['Year'].str.replace(r'\D', '').astype(int)
+year.set_index('Year', inplace=True)
 
-# + jupyter={"outputs_hidden": true} endofcell="--"
-# # +
+# Visualizing the years
+plt.style.use('seaborn-whitegrid')
+year.plot(kind='bar', color='salmon', figsize=(20, 10))
+plt.xlabel('Period of Time')
+plt.ylabel('Number of Appearance')
+plt.title('Number of times "Year" appeared in the r/leaves')
+plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='italic')
+plt.xticks(rotation=0)
+plt.show()
+
+
+# +
 # Cleaning up the corpus
 def preprocessing(text):
     
@@ -230,7 +235,7 @@ rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 # apply preprocessing function
 rleaves['raw'] = rleaves['raw'].apply(preprocessing)
 
-# # + jupyter={"outputs_hidden": true}
+# +
 # WordCloud
 wordcloud_text = ' '.join(rleaves['raw'].tolist())
 
@@ -248,7 +253,7 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
 
-# # + jupyter={"outputs_hidden": true}
+# + jupyter={"outputs_hidden": true} endofcell="--"
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
 
@@ -257,32 +262,15 @@ top_words_barh = pd.DataFrame(top_words, columns=['word', 'count']).set_index('w
 top_words_barh.plot(kind='barh', color='salmon', figsize=(20,30), width=0.85)
 plt.show()
 # -
+# --
 
+# + jupyter={"outputs_hidden": true}
 processed_docs = processed_docs.str.replace(r'years|yrs', 'year')
-processed_docs = processed_docs.str.replace(r'\smonths\s', ' month ')
+# -
 
-# # +
-# YEAR
-year = rleaves[rleaves.raw.str.contains(r'\d+ year|year \d+')]
-year = list(year.raw.str.findall(r'\d+ year|year \d+'))
-year = [item[0].split(' ') for item in year]
-year = [' '.join(reversed(item)) for item in year if re.match(r'\d', item[0])]
-year = pd.Series(year)
-year = year.value_counts().to_frame('Counts').reset_index(level=0)
-year.columns = ['Year', 'Counts']
-year['Year'] = year['Year'].str.replace(r'\D', '').astype(int)
-year.set_index('Year', inplace=True)
+# !jupytext --to py BS-TextExtraction.
 
-# Visualizing the years
-plt.style.use('seaborn-whitegrid')
-year.plot(kind='bar', color='salmon', figsize=(20, 10))
-plt.xlabel('Period of Time')
-plt.ylabel('Number of Appearance')
-plt.title('Number of times "Year" appeared in the r/leaves')
-plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='italic')
-plt.xticks(rotation=0)
-plt.show()
-
+# + endofcell="--"
 # # + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = rleaves['raw'].str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
