@@ -13,7 +13,6 @@
 # ---
 
 # +
-# Python Packages
 import praw
 import re
 import string
@@ -41,7 +40,7 @@ from PIL import Image
 from spacy import displacy
 
 
-# + jupyter={"source_hidden": true}
+# + jupyter={"outputs_hidden": true, "source_hidden": true}
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -87,6 +86,8 @@ def preprocessing(text):
     text = text.lower()
     # removing apostrophes
     text = re.sub("'s", ' ', str(text))
+    # removing hyphens from numbers
+    text = re.sub('-(?<!\d)', ' ', str(text))
     # removing punctuation
     text = text.translate(str.maketrans('', '', string.punctuation))
     # removing emoticons
@@ -113,12 +114,9 @@ def preprocessing(text):
 rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 
 # apply preprocessing function
-rleaves = pd.DataFrame(rleaves['raw'].apply(visual_processing))
-# -
+rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
 
-
-
-# + jupyter={"outputs_hidden": true}
+# +
 # DAY
 day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
 day = [int(item) for item in re.findall(r'\d+', str(day))]
@@ -126,18 +124,21 @@ day = pd.DataFrame.from_dict(Counter(day), orient='index').reset_index().rename(
 
 # Bin the days in to 7 day increment
 day_week = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
-day_week = day_week[day_week['count'] >= 1].drop(['day'], axis=1)
+day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
+day_week.reset_index(inplace=True)
+day_week['week'] = ['Week %s' %i for i in range(1, len(day_week) + 1)]
+day_week = day_week[day_week['count'] > 1].drop(['index'], axis=1).set_index('week')
 
 # Visualizing the days
 plt.style.use('seaborn-whitegrid')
-day_week.plot(kind="bar", color='salmon', figsize=(20, 10))
+day_week.plot(kind="bar", color='salmon', figsize=(25, 10))
 plt.xlabel("Period of Time")
 plt.ylabel("Number of Appearance")
-plt.xticks(rotation=45)
+plt.xticks(rotation=30)
 plt.title("Number of times 'Day' appeared in the r/leaves")
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # week
 week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
 week = [int(item) for item in re.findall(r'\d+', str(week))]
@@ -151,11 +152,8 @@ plt.ylabel('Number of Appearance')
 plt.title('Number of times "Week" appeared in the r/leaves')
 plt.xticks(rotation=0)
 plt.show()
-# -
 
-rleaves[rleaves.raw.str.contains('\s*month\s*\d+')].values.tolist()
-
-# +
+# + jupyter={"outputs_hidden": true}
 # MONTH
 month = list(rleaves.raw.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
 month = [int(item) for item in re.findall(r'\d+', str(month))]
@@ -163,7 +161,7 @@ month = pd.DataFrame.from_dict(Counter(month), orient='index').rename(columns={0
 
 month
 
-# +
+# # +
 # MONTH
 month = rleaves[rleaves.raw.str.contains(r'\d+ month|month \d+')]
 month = list(month.raw.str.findall(r'\d+ month|month \d+'))
@@ -185,7 +183,8 @@ plt.xticks(rotation=0)
 plt.show()
 
 
-# +
+# + jupyter={"outputs_hidden": true} endofcell="--"
+# # +
 # Cleaning up the corpus
 def preprocessing(text):
     
@@ -227,7 +226,7 @@ rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 # apply preprocessing function
 rleaves['raw'] = rleaves['raw'].apply(preprocessing)
 
-# + jupyter={"outputs_hidden": true}
+# # + jupyter={"outputs_hidden": true}
 # WordCloud
 wordcloud_text = ' '.join(rleaves['raw'].tolist())
 
@@ -245,7 +244,7 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
 
-# + jupyter={"outputs_hidden": true}
+# # + jupyter={"outputs_hidden": true}
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
 
@@ -258,7 +257,7 @@ plt.show()
 processed_docs = processed_docs.str.replace(r'years|yrs', 'year')
 processed_docs = processed_docs.str.replace(r'\smonths\s', ' month ')
 
-# +
+# # +
 # YEAR
 year = rleaves[rleaves.raw.str.contains(r'\d+ year|year \d+')]
 year = list(year.raw.str.findall(r'\d+ year|year \d+'))
@@ -280,7 +279,7 @@ plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='
 plt.xticks(rotation=0)
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# # + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = rleaves['raw'].str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
 model_cbow = Word2Vec(corpus, min_count=9, window=3, sg=0, seed=1)
@@ -291,7 +290,7 @@ print(model_skipgram.most_similar('day'))
 #model_cbow.save('model_cbow.bin')
 #new_model_cbow = Word2Vec.load('model_cbow.bin')
 
-# +
+# # +
 # TFIDF
 #tfidf = TfidfVectorizer()
 #bow_rep_tfidf = tfidf.fit_transform(processed_docs)
@@ -308,7 +307,7 @@ print(model_skipgram.most_similar('day'))
 #print("TFIDF representation of all documents in our corpus\n", bow_rep_tfidf.toarray())
 #print("_"*10)
 
-# + jupyter={"outputs_hidden": true}
+# # + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = processed_docs.str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
 model_cbow = Word2Vec(corpus, min_count=9, window=3, sg=0, seed=1)
@@ -319,7 +318,7 @@ print(model_skipgram.most_similar('age'))
 #model_cbow.save('model_cbow.bin')
 #new_model_cbow = Word2Vec.load('model_cbow.bin')
 
-# +
+# # +
 #VISUALIZATION
 
 #from gensim.models import Word2Vec, KeyedVectors
@@ -344,7 +343,7 @@ from textacy import *
 
 en = textacy.load_spacy_lang('en_core_web_sm')
 
-# +
+# # +
 text = ' '.join(rleaves['raw'])
 
 #with open('rleaves.txt', 'w') as output:
@@ -361,7 +360,7 @@ print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, nor
 
 print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, normalize='lemma', topn=10)])
 
-# + active=""
+# # + active=""
 # SPACY CHAPTER 1
 #
 # from spacy.lang.en import English
@@ -426,9 +425,13 @@ print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, nor
 #     print(f"{token_text:<12}{token_pos:<10}{token_dep:<10}")
 #
 
-# +
+# # +
 #print('SGRank output: ', [kps for kps, weights in textacy.ke.sgrank(doc, topn=10)])
 
-# +
+# # +
 #terms = set([term for term, weight in textacy.ke.sgrank(doc)])
 #print(textacy.ke.utils.aggregate_term_variants(terms))
+# --
+
+# + jupyter={"outputs_hidden": true}
+
