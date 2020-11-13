@@ -143,6 +143,10 @@ plt.show()
 week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
 week = [int(item) for item in re.findall(r'\d+', str(week))]
 week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'count'}).sort_index(ascending=True)
+week.reset_index(inplace=True)
+week['index'] = 'Week ' + week['index'].astype(str)
+week.set_index('index', inplace=True)
+
 
 # Visualizing the months
 plt.style.use('seaborn-whitegrid')
@@ -432,6 +436,3 @@ print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, nor
 #terms = set([term for term, weight in textacy.ke.sgrank(doc)])
 #print(textacy.ke.utils.aggregate_term_variants(terms))
 # --
-
-# + jupyter={"outputs_hidden": true}
-
