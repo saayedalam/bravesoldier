@@ -18,8 +18,8 @@ import re
 import string
 import spacy
 import pandas as pd
-import datetime as dt
 import numpy as np
+import seaborn as sns
 import warnings
 import matplotlib.pyplot as plt
 # %matplotlib inline
@@ -40,7 +40,7 @@ from PIL import Image
 from spacy import displacy
 
 
-# + jupyter={"outputs_hidden": true, "source_hidden": true}
+# + jupyter={"outputs_hidden": true}
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -80,7 +80,7 @@ from spacy import displacy
 
 # +
 # Cleaning up the corpus
-def preprocessing(text):
+def cleanup(text):
     
     # lowercase the corpus 
     text = text.lower()
@@ -103,7 +103,7 @@ def preprocessing(text):
                        'couldnt', 'na', 'youre', 'cant', 'u', 'id', 'wasnt', 
                        'le', 'gon', 'pas', 'ill', 'youve', 'wont', 'havent', 
                        'wouldnt', '10184285', '179180', 'arent', 'youll', 'as', 
-                       'oh', 'wan', 'av', 'p', 'ta', '10000']
+                       'oh', 'wan', 'av', 'p', 'ta', '10000', '6000']
     text = [word for word in text if not word in stopwords_extra]
     # join the words
     text = ' '.join(text)
@@ -114,7 +114,7 @@ def preprocessing(text):
 rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 
 # apply preprocessing function
-rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
+rleaves = pd.DataFrame(rleaves['raw'].apply(cleanup))
 
 # +
 # DAY
@@ -122,18 +122,18 @@ day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
 day = [int(item) for item in re.findall(r'\d+', str(day))]
 day = pd.DataFrame.from_dict(Counter(day), orient='index').reset_index().rename(columns={'index':'day', 0:'count'})
 # Bin the days in to 7 day increment
-day_week = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
-day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
-day_week.reset_index(inplace=True)
-day_week['week'] = ['Week %s' %i for i in range(1, len(day_week) + 1)]
-day_week = day_week[day_week['count'] > 1].drop(['index'], axis=1).set_index('week')
+day = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
+day = day.drop(['day'], axis=1).reset_index(drop=True)
+day.index = ['Week %s' %i for i in range(1, len(day) + 1)]
+day = day[day['count'] > 1]
 
 # Visualizing the days
 plt.style.use('seaborn-whitegrid')
-day_week.plot(kind="bar", color='salmon', figsize=(25, 10))
+plt.figure(figsize=(25, 10))
+plt.bar(day.index, day['count'], color='salmon')
 plt.xlabel("Period of Time")
 plt.ylabel("Number of Appearance")
-plt.xticks(rotation=30)
+plt.xticks(rotation=90)
 plt.title("Number of times 'Day' appeared in the r/leaves")
 plt.show()
 
@@ -142,13 +142,12 @@ plt.show()
 week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
 week = [int(item) for item in re.findall(r'\d+', str(week))]
 week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'count'}).sort_index(ascending=True)
-week.reset_index(inplace=True)
-week['index'] = 'Week ' + week['index'].astype(str)
-week.set_index('index', inplace=True)
+week.index = 'Week ' + week.index.astype(str)
 
 # Visualizing the months
 plt.style.use('seaborn-whitegrid')
-week.plot(kind='bar', color='salmon', figsize=(20, 10))
+plt.figure(figsize=(20, 10))
+plt.bar(week.index, week['count'], color='salmon')
 plt.xlabel('Period of Time')
 plt.ylabel('Number of Appearance')
 plt.title('Number of times "Week" appeared in the r/leaves')
@@ -163,7 +162,8 @@ month = pd.DataFrame.from_dict(Counter(month), orient='index').rename(columns={0
 
 # Visualizing the months
 plt.style.use('seaborn-whitegrid')
-month.plot(kind="bar", color='salmon', figsize=(20, 10))
+plt.figure(figsize=(20, 10))
+plt.bar(month.index, month['count'], data=month, color='salmon')
 plt.xlabel("Period of Time")
 plt.ylabel("Number of Appearance")
 plt.title("Number of times 'Month' appeared in the r/leaves")
@@ -172,68 +172,38 @@ plt.show()
 
 # +
 # YEAR
-year = rleaves[rleaves.raw.str.contains(r'\d+ year|year \d+')]
-year = list(year.raw.str.findall(r'\d+ year|year \d+'))
-year = [item[0].split(' ') for item in year]
-year = [' '.join(reversed(item)) for item in year if re.match(r'\d', item[0])]
-year = pd.Series(year)
-year = year.value_counts().to_frame('Counts').reset_index(level=0)
-year.columns = ['Year', 'Counts']
-year['Year'] = year['Year'].str.replace(r'\D', '').astype(int)
-year.set_index('Year', inplace=True)
+year = list(rleaves.raw.str.findall(r'\d+\s*ye?a?r[s\s]*')) 
+year = [int(item) for item in re.findall(r'\d+', str(year))]
+year = pd.DataFrame.from_dict(Counter(year), orient='index').rename(columns={0:'count'}).sort_index(ascending=True)
 
 # Visualizing the years
 plt.style.use('seaborn-whitegrid')
-year.plot(kind='bar', color='salmon', figsize=(20, 10))
+plt.figure(figsize=(20, 10))
+plt.bar(year.index, year['count'], color='salmon')
 plt.xlabel('Period of Time')
 plt.ylabel('Number of Appearance')
 plt.title('Number of times "Year" appeared in the r/leaves')
-plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='italic')
+plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='normal')
 plt.xticks(rotation=0)
 plt.show()
 
-
 # +
-# Cleaning up the corpus
-def preprocessing(text):
-    
-    # lowercase the corpus 
-    text = text.lower()
-    # removing apostrophes
-    text = re.sub("'s", ' ', str(text))
-    # removing punctuation
-    text = text.translate(str.maketrans('', '', string.punctuation))
-    # removing emoticons
-    text = re.sub('[^\w\s,]', ' ', str(text))
-    # removing zero-width space characters
-    text = re.sub('x200b', ' ', str(text))
-    # removing trailing whitespaces
-    text = ' '.join([token for token in text.split()])
-    # word tokenization
-    text = word_tokenize(text)
-    # removing stopwords
-    stopwords_nltk = set(stopwords.words('english'))
-    text = [word for word in text if not word in stopwords_nltk]
-    # lemmatizing words
-    lemmatizer = WordNetLemmatizer()
-    text = [lemmatizer.lemmatize(word) for word in text]
-    # additional removal of unnecessary words
-    stopwords_extra = ['im', 'ive', 'dont', 'didnt', 'doesnt', 'isnt', 
-                       'couldnt', 'na', 'youre', 'cant', 'u', 'id', 'wasnt', 
-                       'le', 'gon', 'pas', 'ill', 'youve', 'wont', 'havent', 
-                       'wouldnt', '10184285', '179180', 'arent', 'youll', 'as', 
-                       'oh', 'wan', 'av', 'p', 'ta']
-    text = [word for word in text if not word in stopwords_extra]
-    # join the words
-    text = ' '.join(text)
+# Lemmatize Words
+lemmatizer = WordNetLemmatizer()
+stopwords = set(stopwords.words('english')) 
 
+def preprocessing(text):
+    text = word_tokenize(text)
+    text = [w for w in text if not w in stopwords] 
+    text = [lemmatizer.lemmatize(w) for w in text]
+    text = ' '.join(text)
     return text
 
-# Load the local files
-rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
+# Applying lemmatize function
+rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
+# -
 
-# apply preprocessing function
-rleaves['raw'] = rleaves['raw'].apply(preprocessing)
+rleaves.raw[3]
 
 # +
 # WordCloud
@@ -253,7 +223,7 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
 
-# + jupyter={"outputs_hidden": true} endofcell="--"
+# +
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
 
@@ -261,16 +231,11 @@ plt.style.use('seaborn-whitegrid')
 top_words_barh = pd.DataFrame(top_words, columns=['word', 'count']).set_index('word').sort_values(by='count', ascending=True)
 top_words_barh.plot(kind='barh', color='salmon', figsize=(20,30), width=0.85)
 plt.show()
-# -
-# --
 
 # + jupyter={"outputs_hidden": true}
-processed_docs = processed_docs.str.replace(r'years|yrs', 'year')
-# -
+# !jupytext --to py BS-TextExtraction.ipynb
 
-# !jupytext --to py BS-TextExtraction.
-
-# + endofcell="--"
+# + jupyter={"outputs_hidden": true} endofcell="--"
 # # + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = rleaves['raw'].str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
