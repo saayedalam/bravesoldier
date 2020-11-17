@@ -40,7 +40,7 @@ from PIL import Image
 from spacy import displacy
 
 
-# + jupyter={"outputs_hidden": true}
+# + jupyter={"outputs_hidden": true, "source_hidden": true}
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -116,7 +116,7 @@ rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 # apply preprocessing function
 rleaves = pd.DataFrame(rleaves['raw'].apply(cleanup))
 
-# +
+# + jupyter={"outputs_hidden": true}
 # DAY
 day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
 day = [int(item) for item in re.findall(r'\d+', str(day))]
@@ -137,7 +137,7 @@ plt.xticks(rotation=90)
 plt.title("Number of times 'Day' appeared in the r/leaves")
 plt.show()
 
-# +
+# + jupyter={"outputs_hidden": true}
 # week
 week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
 week = [int(item) for item in re.findall(r'\d+', str(week))]
@@ -154,7 +154,7 @@ plt.title('Number of times "Week" appeared in the r/leaves')
 plt.xticks(rotation=0)
 plt.show()
 
-# +
+# + jupyter={"outputs_hidden": true}
 # MONTH
 month = list(rleaves.raw.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
 month = [int(item) for item in re.findall(r'\d+', str(month))]
@@ -170,7 +170,7 @@ plt.title("Number of times 'Month' appeared in the r/leaves")
 plt.xticks(rotation=0)
 plt.show()
 
-# +
+# + jupyter={"outputs_hidden": true}
 # YEAR
 year = list(rleaves.raw.str.findall(r'\d+\s*ye?a?r[s\s]*')) 
 year = [int(item) for item in re.findall(r'\d+', str(year))]
@@ -183,29 +183,29 @@ plt.bar(year.index, year['count'], color='salmon')
 plt.xlabel('Period of Time')
 plt.ylabel('Number of Appearance')
 plt.title('Number of times "Year" appeared in the r/leaves')
-plt.text(28, 28, 'Years could mean a) number of years smoked OR b) age', style='normal')
+plt.text(28, 28, 'Year: a) number of years smoked OR b) age', style='normal')
 plt.xticks(rotation=0)
 plt.show()
+# -
 
-# +
 # Lemmatize Words
 lemmatizer = WordNetLemmatizer()
 stopwords = set(stopwords.words('english')) 
+
 
 def preprocessing(text):
     text = word_tokenize(text)
     text = [w for w in text if not w in stopwords] 
     text = [lemmatizer.lemmatize(w) for w in text]
+    #text = re.sub('\sle\s', 'less', str(text))
     text = ' '.join(text)
     return text
 
+
 # Applying lemmatize function
 rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
-# -
 
-rleaves.raw[3]
-
-# +
+# + jupyter={"outputs_hidden": true}
 # WordCloud
 wordcloud_text = ' '.join(rleaves['raw'].tolist())
 
@@ -222,14 +222,17 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
     
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
+# -
 
-# +
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
-
+top_words = pd.DataFrame(top_words, columns=['word', 'count']).set_index('word').sort_values(by='count', ascending=True)
 plt.style.use('seaborn-whitegrid')
-top_words_barh = pd.DataFrame(top_words, columns=['word', 'count']).set_index('word').sort_values(by='count', ascending=True)
-top_words_barh.plot(kind='barh', color='salmon', figsize=(20,30), width=0.85)
+plt.figure(figsize=(20, 30))
+plt.barh(top_words.index, top_words['count'], color='salmon')
+plt.xlabel('N')
+plt.ylabel("Number of Appearance")
+plt.title("Number of times 'Month' appeared in the r/leaves")
 plt.show()
 
 # + jupyter={"outputs_hidden": true}
