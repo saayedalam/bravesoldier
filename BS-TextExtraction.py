@@ -12,19 +12,22 @@
 #     name: python3
 # ---
 
-# +
+# + jupyter={"outputs_hidden": true}
 import praw
 import re
 import string
+import os
 import spacy
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import warnings
 import matplotlib.pyplot as plt
+import tensorflow as tf
 # %matplotlib inline
 warnings.filterwarnings('ignore')
 
+from tensorflow.contrib.tensorboard.plugins import projector
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 from spacy.lang.en.stop_words import STOP_WORDS
@@ -33,14 +36,14 @@ from nltk.stem import WordNetLemmatizer
 from nltk.probability import FreqDist
 from string import punctuation
 from sklearn.feature_extraction.text import TfidfVectorizer
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, KeyedVectors
 from spellchecker import SpellChecker
 from wordcloud import WordCloud, STOPWORDS
 from PIL import Image
 from spacy import displacy
 
 
-# + jupyter={"outputs_hidden": true, "source_hidden": true}
+# + jupyter={"outputs_hidden": true}
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -78,7 +81,7 @@ from spacy import displacy
 ## Save it as CSV
 #df.to_csv('rleaves.csv', index=False)
 
-# +
+# + jupyter={"outputs_hidden": true}
 # Cleaning up the corpus
 def cleanup(text):
     
@@ -101,7 +104,7 @@ def cleanup(text):
     # additional removal of unnecessary words
     stopwords_extra = ['im', 'ive', 'dont', 'didnt', 'doesnt', 'isnt', 
                        'couldnt', 'na', 'youre', 'cant', 'u', 'id', 'wasnt', 
-                       'le', 'gon', 'pas', 'ill', 'youve', 'wont', 'havent', 
+                       'gon', 'pas', 'ill', 'youve', 'wont', 'havent', 
                        'wouldnt', '10184285', '179180', 'arent', 'youll', 'as', 
                        'oh', 'wan', 'av', 'p', 'ta', '10000', '6000']
     text = [word for word in text if not word in stopwords_extra]
@@ -183,24 +186,23 @@ plt.bar(year.index, year['count'], color='salmon')
 plt.xlabel('Period of Time')
 plt.ylabel('Number of Appearance')
 plt.title('Number of times "Year" appeared in the r/leaves')
-plt.text(28, 28, 'Year: a) number of years smoked OR b) age', style='normal')
+plt.text(50, 50, 'year: a) number of years smoked OR b) age', style='normal' , fontsize=12, bbox=dict(facecolor='blue', alpha=0.2))
 plt.xticks(rotation=0)
 plt.show()
-# -
 
+# + jupyter={"outputs_hidden": true}
 # Lemmatize Words
+from nltk.corpus import stopwords
 lemmatizer = WordNetLemmatizer()
 stopwords = set(stopwords.words('english')) 
-
 
 def preprocessing(text):
     text = word_tokenize(text)
     text = [w for w in text if not w in stopwords] 
     text = [lemmatizer.lemmatize(w) for w in text]
-    #text = re.sub('\sle\s', 'less', str(text))
     text = ' '.join(text)
+    text = re.sub('\sle\s', ' less ', str(text))
     return text
-
 
 # Applying lemmatize function
 rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
@@ -222,38 +224,30 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
     
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
-# -
 
+# + jupyter={"outputs_hidden": true}
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
 top_words = pd.DataFrame(top_words, columns=['word', 'count']).set_index('word').sort_values(by='count', ascending=True)
 plt.style.use('seaborn-whitegrid')
 plt.figure(figsize=(20, 30))
 plt.barh(top_words.index, top_words['count'], color='salmon')
-plt.xlabel('N')
-plt.ylabel("Number of Appearance")
-plt.title("Number of times 'Month' appeared in the r/leaves")
+plt.xlabel('Number of times a word appears')
+plt.ylabel('Words')
+plt.title('Top Words in r/leaves subreddit')
 plt.show()
 
 # + jupyter={"outputs_hidden": true}
-# !jupytext --to py BS-TextExtraction.ipynb
-
-# + jupyter={"outputs_hidden": true} endofcell="--"
-# # + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = rleaves['raw'].str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
 model_cbow = Word2Vec(corpus, min_count=9, window=3, sg=0, seed=1)
-model_skipgram = Word2Vec(corpus, min_count=9, window=3, sg=1, seed=1)
-
-print(model_cbow.most_similar('day'))
-print(model_skipgram.most_similar('day'))
+model_cbow.most_similar('weed')
 #model_cbow.save('model_cbow.bin')
-#new_model_cbow = Word2Vec.load('model_cbow.bin')
 
-# # +
-# TFIDF
+# + jupyter={"outputs_hidden": true}
+## TFIDF
 #tfidf = TfidfVectorizer()
-#bow_rep_tfidf = tfidf.fit_transform(processed_docs)
+#bow_rep_tfidf = tfidf.fit_transform(rleaves.raw.values.tolist())
 #
 ##IDF for all words in the vocabulary
 #print("IDF for all words in the vocabulary\n", tfidf.idf_)
@@ -267,128 +261,43 @@ print(model_skipgram.most_similar('day'))
 #print("TFIDF representation of all documents in our corpus\n", bow_rep_tfidf.toarray())
 #print("_"*10)
 
-# # + jupyter={"outputs_hidden": true}
-# Word Embedding
-corpus = processed_docs.str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
-model_cbow = Word2Vec(corpus, min_count=9, window=3, sg=0, seed=1)
-model_skipgram = Word2Vec(corpus, min_count=9, window=3, sg=1, seed=1)
-
-print(model_cbow.most_similar('age'))
-print(model_skipgram.most_similar('age'))
-#model_cbow.save('model_cbow.bin')
-#new_model_cbow = Word2Vec.load('model_cbow.bin')
-
-# # +
-#VISUALIZATION
-
-#from gensim.models import Word2Vec, KeyedVectors
-#import warnings
-#warnings.filterwarnings('ignore')
-#
-#import numpy as np
-#import matplotlib.pyplot as plt
-#from sklearn.manifold import TSNE
-#
-#model = KeyedVectors.load('model_cbow.bin')
-#
-#words_vocab = list(model.wv.vocab)
-#print("Size of Vocabulary: ", len(words_vocab))
-#print("="*30)
-#print("Few Words in Vocabulary", words_vocab[:50])
-# -
-
-import spacy
+# + jupyter={"outputs_hidden": true}
+# Key P
 import textacy.ke
 from textacy import *
 
+# Load a spacy model, which will be used for all further processing.
 en = textacy.load_spacy_lang('en_core_web_sm')
-
-# # +
 text = ' '.join(rleaves['raw'])
 
-#with open('rleaves.txt', 'w') as output:
-#    output.write(text)
-# -
-
+#convert the text into a spacy document.
 doc = textacy.make_spacy_doc(text, lang=en)
 
-textacy.ke.textrank(doc, topn=5)
+# + jupyter={"outputs_hidden": true}
+textacy.ke.textrank(doc, window_size=10, edge_weighting='count', position_bias=True, topn=10)
 
-textacy.ke.textrank(doc, topn=10)
+# + jupyter={"outputs_hidden": true}
+textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10)
 
-print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, normalize='lemma', topn=10)])
+# + jupyter={"outputs_hidden": true}
+textacy.ke.sgrank(doc, topn=10)
 
-print('Textrank output: ', [kps for kps, weights in textacy.ke.textrank(doc, normalize='lemma', topn=10)])
+# + jupyter={"outputs_hidden": true}
+nlp = spacy.load('en_core_web_sm') 
+nlp.max_length = 1500000 
 
-# # + active=""
-# SPACY CHAPTER 1
-#
-# from spacy.lang.en import English
-#
-# nlp = English()
-#
-# doc = nlp(rleaves['raw'][3])
-#
-# token = doc[1:3]
-#
-# print(token.text)
-#
-# # Process the text
-# doc = nlp(' '.join(rleaves['raw']))
-#
-# # Iterate over the tokens in the doc
-# for token in doc:
-#     # Check if the token resembles a number
-#     if token.like_num:
-#         # Get the next token in the document
-#         next_token = doc[token.i + 1]
-#         # Check if the next token's text equals "%"
-#         if next_token.text == "year":
-#             print("Percentage found:", token.text)
-#
-# nlp = spacy.load('en_core_web_sm')
-# doc = nlp(rleaves['raw'][1])
-#
-# for token in doc:
-#     print(token.text, token.pos_, token.dep_, token.head.text)
-#     
-# for ent in doc.ents:
-#     print(ent.text, ent.label_)
-#
-# from spacy.matcher import Matcher
-#
-# nlp = spacy.load('en_core_web_sm')
-# matcher = Matcher(nlp.vocab)
-#
-# # pattern
-# pattern = [{'POS': 'ADJ'}, {'POS': 'NOUN'}, {'POS': 'NOUN', 'OP': '?'}]
-# matcher.add('DAY_PATTERN', None, pattern)
-#
-# doc = nlp(' '.join(rleaves['raw']))
-#
-# matches = matcher(doc)
-#
-# #print('Matches:', [doc[start:end].text for match_id, start, end in matches])
-#
-# for match_id, start, end in matches:
-#     print('Match found:', doc[start:end].text)
-#
-# nlp = spacy.load('en_core_web_sm')
-# doc = nlp(rleaves['raw'][2])
-#
-# for token in doc:
-#     # Get the token text, part-of-speech tag and dependency label
-#     token_text = token.text
-#     token_pos = token.pos_
-#     token_dep = token.dep_
-#     # This is for formatting only
-#     print(f"{token_text:<12}{token_pos:<10}{token_dep:<10}")
-#
+from spacy.matcher import Matcher
+matcher = Matcher(nlp.vocab)
 
-# # +
-#print('SGRank output: ', [kps for kps, weights in textacy.ke.sgrank(doc, topn=10)])
+# pattern
+pattern = [{'POS': 'ADJ'}, {'POS': 'NOUN'}, {'POS': 'NOUN', 'OP': '?'}]
+matcher.add('DAY_PATTERN', None, pattern)
 
-# # +
-#terms = set([term for term, weight in textacy.ke.sgrank(doc)])
-#print(textacy.ke.utils.aggregate_term_variants(terms))
-# --
+doc = nlp(' '.join(rleaves['raw']))
+matches = matcher(doc)
+
+for match_id, start, end in matches:
+    print('Match found:', doc[start:end].text)
+
+# + jupyter={"outputs_hidden": true}
+# !jupytext --to py BS-TextExtraction.ipynb
