@@ -12,7 +12,7 @@
 #     name: python3
 # ---
 
-# + jupyter={"outputs_hidden": true}
+# +
 import praw
 import re
 import string
@@ -20,14 +20,12 @@ import os
 import spacy
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import warnings
 import matplotlib.pyplot as plt
-import tensorflow as tf
 # %matplotlib inline
 warnings.filterwarnings('ignore')
 
-from tensorflow.contrib.tensorboard.plugins import projector
+from tabulate import tabulate
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 from spacy.lang.en.stop_words import STOP_WORDS
@@ -43,7 +41,7 @@ from PIL import Image
 from spacy import displacy
 
 
-# + jupyter={"outputs_hidden": true}
+# +
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -81,7 +79,7 @@ from spacy import displacy
 ## Save it as CSV
 #df.to_csv('rleaves.csv', index=False)
 
-# + jupyter={"outputs_hidden": true}
+# +
 # Cleaning up the corpus
 def cleanup(text):
     
@@ -119,7 +117,7 @@ rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
 # apply preprocessing function
 rleaves = pd.DataFrame(rleaves['raw'].apply(cleanup))
 
-# + jupyter={"outputs_hidden": true}
+# +
 # DAY
 day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
 day = [int(item) for item in re.findall(r'\d+', str(day))]
@@ -140,7 +138,7 @@ plt.xticks(rotation=90)
 plt.title("Number of times 'Day' appeared in the r/leaves")
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # week
 week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
 week = [int(item) for item in re.findall(r'\d+', str(week))]
@@ -157,7 +155,7 @@ plt.title('Number of times "Week" appeared in the r/leaves')
 plt.xticks(rotation=0)
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # MONTH
 month = list(rleaves.raw.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
 month = [int(item) for item in re.findall(r'\d+', str(month))]
@@ -173,7 +171,7 @@ plt.title("Number of times 'Month' appeared in the r/leaves")
 plt.xticks(rotation=0)
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # YEAR
 year = list(rleaves.raw.str.findall(r'\d+\s*ye?a?r[s\s]*')) 
 year = [int(item) for item in re.findall(r'\d+', str(year))]
@@ -190,7 +188,7 @@ plt.text(50, 50, 'year: a) number of years smoked OR b) age', style='normal' , f
 plt.xticks(rotation=0)
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
+# +
 # Lemmatize Words
 from nltk.corpus import stopwords
 lemmatizer = WordNetLemmatizer()
@@ -207,7 +205,7 @@ def preprocessing(text):
 # Applying lemmatize function
 rleaves = pd.DataFrame(rleaves['raw'].apply(preprocessing))
 
-# + jupyter={"outputs_hidden": true}
+# +
 # WordCloud
 wordcloud_text = ' '.join(rleaves['raw'].tolist())
 
@@ -224,8 +222,8 @@ wordcloud_user = WordCloud(width=3000, height=2000, random_state=1, background_c
     
 #wordcloud_user.to_file("wordcloud_user_leaves.png")
 plot_cloud(wordcloud_user)
+# -
 
-# + jupyter={"outputs_hidden": true}
 # Most common words
 top_words = Counter(' '.join(rleaves['raw']).split()).most_common(50)
 top_words = pd.DataFrame(top_words, columns=['word', 'count']).set_index('word').sort_values(by='count', ascending=True)
@@ -237,14 +235,13 @@ plt.ylabel('Words')
 plt.title('Top Words in r/leaves subreddit')
 plt.show()
 
-# + jupyter={"outputs_hidden": true}
 # Word Embedding
 corpus = rleaves['raw'].str.replace(r'\d+', '').apply(word_tokenize).values.tolist()
 model_cbow = Word2Vec(corpus, min_count=9, window=3, sg=0, seed=1)
-model_cbow.most_similar('weed')
+print(tabulate(model_cbow.most_similar('weed'), tablefmt='grid'))
 #model_cbow.save('model_cbow.bin')
 
-# + jupyter={"outputs_hidden": true}
+# +
 ## TFIDF
 #tfidf = TfidfVectorizer()
 #bow_rep_tfidf = tfidf.fit_transform(rleaves.raw.values.tolist())
@@ -261,7 +258,7 @@ model_cbow.most_similar('weed')
 #print("TFIDF representation of all documents in our corpus\n", bow_rep_tfidf.toarray())
 #print("_"*10)
 
-# + jupyter={"outputs_hidden": true}
+# +
 # Key P
 import textacy.ke
 from textacy import *
@@ -272,32 +269,22 @@ text = ' '.join(rleaves['raw'])
 
 #convert the text into a spacy document.
 doc = textacy.make_spacy_doc(text, lang=en)
+# -
 
-# + jupyter={"outputs_hidden": true}
 textacy.ke.textrank(doc, window_size=10, edge_weighting='count', position_bias=True, topn=10)
 
-# + jupyter={"outputs_hidden": true}
-textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10)
+print(tabulate(textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10), tablefmt='grid'))
 
-# + jupyter={"outputs_hidden": true}
-textacy.ke.sgrank(doc, topn=10)
+# +
+# Load a larger model with vectors
+nlp = spacy.load("en_core_web_md")
 
-# + jupyter={"outputs_hidden": true}
-nlp = spacy.load('en_core_web_sm') 
-nlp.max_length = 1500000 
+# Compare two documents
+doc1 = nlp(rleaves['raw'][0])
+doc2 = nlp(rleaves['raw'][3])
+print(doc1.similarity(doc2))
+# -
 
-from spacy.matcher import Matcher
-matcher = Matcher(nlp.vocab)
+rleaves['raw'][5]
 
-# pattern
-pattern = [{'POS': 'ADJ'}, {'POS': 'NOUN'}, {'POS': 'NOUN', 'OP': '?'}]
-matcher.add('DAY_PATTERN', None, pattern)
-
-doc = nlp(' '.join(rleaves['raw']))
-matches = matcher(doc)
-
-for match_id, start, end in matches:
-    print('Match found:', doc[start:end].text)
-
-# + jupyter={"outputs_hidden": true}
 # !jupytext --to py BS-TextExtraction.ipynb
