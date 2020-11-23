@@ -21,6 +21,7 @@ import spacy
 import pandas as pd
 import numpy as np
 import warnings
+import textacy.ke
 import matplotlib.pyplot as plt
 # %matplotlib inline
 warnings.filterwarnings('ignore')
@@ -39,9 +40,10 @@ from spellchecker import SpellChecker
 from wordcloud import WordCloud, STOPWORDS
 from PIL import Image
 from spacy import displacy
+from spacy.matcher import Matcher
 
 
-# +
+# + jupyter={"source_hidden": true}
 ## Reddit API Credentials
 #reddit = praw.Reddit(client_id='7_PY9asBHeVJxw',
 #                     client_secret='KL01wgTYZqwEDdPH-R8vNBqFYe4',
@@ -242,27 +244,6 @@ print(tabulate(model_cbow.most_similar('weed'), tablefmt='grid'))
 #model_cbow.save('model_cbow.bin')
 
 # +
-## TFIDF
-#tfidf = TfidfVectorizer()
-#bow_rep_tfidf = tfidf.fit_transform(rleaves.raw.values.tolist())
-#
-##IDF for all words in the vocabulary
-#print("IDF for all words in the vocabulary\n", tfidf.idf_)
-#print("_"*10)
-#
-##All words in the vocabulary
-#print("All words in the vocabulary\n", tfidf.get_feature_names())
-#print("_"*10)
-#
-##TFIDF representation of all documents in our corpus
-#print("TFIDF representation of all documents in our corpus\n", bow_rep_tfidf.toarray())
-#print("_"*10)
-
-# +
-# Key P
-import textacy.ke
-from textacy import *
-
 # Load a spacy model, which will be used for all further processing.
 en = textacy.load_spacy_lang('en_core_web_sm')
 text = ' '.join(rleaves['raw'])
@@ -275,16 +256,22 @@ textacy.ke.textrank(doc, window_size=10, edge_weighting='count', position_bias=T
 
 print(tabulate(textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10), tablefmt='grid'))
 
-# +
-# Load a larger model with vectors
-nlp = spacy.load("en_core_web_md")
+nlp = spacy.load("en_core_web_sm")
+matcher = Matcher(nlp.vocab)
+doc = nlp(' '.join(rleaves.raw))
+pattern = [{'DEP': 'acl'}, {'POS': 'NOUN'}]
+matcher.add("numeric modifier", None, pattern)
+matches = matcher(doc)
+for match_id, start, end in matches:
+    # Get the matched span
+    matched_span = doc[start:end]
+    print(matched_span.text)
 
-# Compare two documents
-doc1 = nlp(rleaves['raw'][0])
-doc2 = nlp(rleaves['raw'][3])
-print(doc1.similarity(doc2))
-# -
+rr.raw[0]
 
-rleaves['raw'][5]
 
+
+rleaves[rleaves.raw.str.contains(r'\d+')]
+
+# + jupyter={"outputs_hidden": true}
 # !jupytext --to py BS-TextExtraction.ipynb
