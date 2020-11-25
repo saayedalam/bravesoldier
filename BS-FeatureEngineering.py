@@ -82,31 +82,30 @@ nlp = spacy.load('en_core_web_sm')
 
 matcher = Matcher(nlp.vocab)
 
+spacy.explain('dobj')
+
+np.random.random_integers(1309)
+
+rleaves.shape
+
+rleaves.raw[np.random.random_integers(1309)]
+
+
+def extract_acomp_dep(text):
+    pattern = [{'ORTH': 'mood'}]
+    #pattern = [{'DEP': 'ccomp'}]
+    matcher.add("test", None, pattern)
+    matches = matcher(text)
+    print('Total matches found:', len(matches))
+    for match_id, start, end in matches:
+        span = doc[start:end]
+        print(span.text)    
+
+
 doc = nlp(' '.join(rleaves.raw))
 
-spacy.explain('acomp')
-
-rleaves.raw[666]
-
-pattern = [{'DEP': 'acomp'}]
-matcher.add("test", None, pattern)
-matches = matcher(doc)
-
-for match_id, start, end in matches:
-    # Get the matched span
-    matched_span = doc[start:end]
-    print(matched_span.text)
-
-
-def get_matches(text):
-    doc = nlp(text)
-    pattern = [{'DEP': 'acomp'}]
-    matcher.add("test", None, pattern)
-    matches = matcher(doc)
-    for match_id, start, end in matches:
-        matched_span = doc[start:end]
-        print(matched_span.text)    
-
-
+extract_acomp_dep(doc)
 
 # !jupytext --to py BS-FeatureEngineering.ipynb
+
+
