@@ -147,6 +147,35 @@ if sidebar == "Authors":
         fig.update_traces(marker_color='plum')
         st.plotly_chart(fig)
         
+    with st.beta_expander(" What do we know about the authors of the posts?", expanded=True):
+        st.markdown('''> **81.23%** of the posts are by unique authors.
+        >
+        > **77 authors** have more than one post.''')
+        
+    with st.beta_expander("Code"):
+        st.code("""round(rleaves['author'].nunique()/rleaves.shape[0]*100, 2)
+rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1].shape[0]""")
     
     
+if sidebar == "Time":
+    with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')
     
+    day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
+    day = [int(item) for item in re.findall(r'\d+', str(day))]
+    day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
+    day_week = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
+    
+    day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
+    day['day'] = 'Day ' + day['day'].astype(str)
+    day.sort_values(by='count', ascending=False, inplace=True) 
+    
+    col1, col2 = st.beta_columns([3, 1])
+    with st.echo(code_location='below'):
+        fig = px.bar(day, x='day', y='count', template='plotly_white')
+        fig.update_yaxes(visible=False)
+        fig.update_xaxes(title_text='Day')
+        fig.update_traces(marker_color='salmon')
+        col1.plotly_chart(fig)
+        
+    col2.dataframe(day)
