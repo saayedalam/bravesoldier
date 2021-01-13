@@ -156,26 +156,82 @@ if sidebar == "Authors":
         st.code("""round(rleaves['author'].nunique()/rleaves.shape[0]*100, 2)
 rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1].shape[0]""")
     
-    
+# Time Sidebar    
 if sidebar == "Time":
-    with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
-        st.markdown('XXX')
+    
+    def plot(df, title):
+        fig = px.bar(df, x=df.iloc[:, 0], y=df.iloc[:, 1], template='plotly_white')
+        fig.update_yaxes(visible=False)
+        fig.update_xaxes(title_text=title)
+        fig.update_traces(marker_color='salmon')
+        st.plotly_chart(fig)
+    
+    st.cache()
+    def day_to_week(df):
+        return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
+    
+    st.cache()
+    def get_month(series):
+        month = list(series.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
+        month = [int(item) for item in re.findall(r'\d+', str(month))]
+        month = pd.DataFrame([[x, month.count(x)] for x in set(month)]).rename(columns={0:'month', 1:'count'}).sort_values(by='count', ascending=False)
+        month = month[month['month'] < 200]
+        month['month'] = 'Month ' + month['month'].astype(str)
+        return month
+
+    st.cache()
+    def get_year(series):
+        year = list(series.str.findall('\d+\s*ye?a?r[s\s]*')) 
+        year = [int(item) for item in re.findall(r'\d+', str(year))]
+        year = pd.DataFrame([[x, year.count(x)] for x in set(year)]).rename(columns={0:'year', 1:'count'}).sort_values(by='count', ascending=False)
+        year = year.loc[(year['year'] < 50) & (year['year'] > 0)]
+        year['year'] = 'Year ' + year['year'].astype(str)
+        return year
+    
     
     day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
     day = [int(item) for item in re.findall(r'\d+', str(day))]
     day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
-    day_week = day.groupby(pd.cut(day['day'], np.arange(0, day['day'].max(), 7))).sum()
-    
+    day_week = day.copy()
     day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
     day['day'] = 'Day ' + day['day'].astype(str)
     day.sort_values(by='count', ascending=False, inplace=True) 
+     
+    day_week = day_to_week(day_week)
+    day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
+    day_week = day_week[day_week['count'] > 1]
+    day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
+    week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
+    week = [int(item) for item in re.findall(r'\d+', str(week))]
+    week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
+    week = week[week.index < 35]
+    week.index = 'Week ' + week.index.astype(str)
+    week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
+    week[['count','w_count']] = week[['count','w_count']].astype(int)
+    week['total_count'] = week['count'] + week['w_count']
+    week.sort_values(by='total_count', ascending=False, inplace=True)
     
-    col1, col2 = st.beta_columns([3, 1])
-    with st.echo(code_location='below'):
-        fig = px.bar(day, x='day', y='count', template='plotly_white')
-        fig.update_yaxes(visible=False)
-        fig.update_xaxes(title_text='Day')
-        fig.update_traces(marker_color='salmon')
-        col1.plotly_chart(fig)
-        
-    col2.dataframe(day)
+  
+    # This section is for plotting 'day' mentions in subreddit
+    with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')
+    plot(day, 'Day')
+    
+    # This section is for plotting 'week' mentions in subreddit
+    with st.beta_expander("Which week during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    fig = px.bar(week, x='index', y='total_count', template='plotly_white')
+    fig.update_yaxes(visible=False)
+    fig.update_xaxes(title_text='Week')
+    fig.update_traces(marker_color='salmon')
+    st.plotly_chart(fig)
+    
+    # This section is for plotting 'month' mentions in subreddit
+    with st.beta_expander("Which month during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    plot(get_month(rleaves['raw']), 'Month')
+    
+    # # This section is for plotting 'day' mentions in subreddit
+    with st.beta_expander("Which year during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    plot(get_year(rleaves['raw']), 'Year')
