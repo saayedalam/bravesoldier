@@ -133,8 +133,7 @@ if sidebar == "Authors":
         fig.update_yaxes(visible=False)
         fig.update_xaxes(title_text='Day')
         fig.update_traces(marker_color='plum')
-        st.plotly_chart(fig)
-        
+        st.plotly_chart(fig)        
     
     with st.beta_expander("What time of the day had more posts than the others?", expanded=True):
         st.markdown('Late nights saw very few posts. For instance, from 12 AM to 4 AM we see the least amount of posts. In my opinion, it is harder to have stong will power at that time of the hour. That is why we see more posts during mid day.')
@@ -157,8 +156,7 @@ if sidebar == "Authors":
 rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1].shape[0]""")
     
 # Time Sidebar    
-if sidebar == "Time":
-    
+if sidebar == "Time":    
     def plot(df, title):
         fig = px.bar(df, x=df.iloc[:, 0], y=df.iloc[:, 1], template='plotly_white')
         fig.update_yaxes(visible=False)
@@ -169,6 +167,36 @@ if sidebar == "Time":
     st.cache()
     def day_to_week(df):
         return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
+    
+    st.cache()
+    def get_day(series):
+        day = list(series.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
+        day = [int(item) for item in re.findall(r'\d+', str(day))]
+        day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
+        day_week = day.copy()
+        day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
+        day['day'] = 'Day ' + day['day'].astype(str)
+        day.sort_values(by='count', ascending=False, inplace=True) 
+        return day, day_week
+    
+    st.cache()
+    def get_week(series):
+        #global day_week
+        week = list(series.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
+        week = [int(item) for item in re.findall(r'\d+', str(week))]
+        week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
+        week = week[week.index < 35]
+        week.index = 'Week ' + week.index.astype(str)
+        day_week = day_to_week(get_day(series)[1])
+        day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
+        day_week = day_week[day_week['count'] > 1]
+        day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
+        week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
+        week[['count','w_count']] = week[['count','w_count']].astype(int)
+        week['count'] = week['count'] + week['w_count']
+        week.sort_values(by='count', ascending=False, inplace=True)
+        week.drop(columns=['w_count'], inplace=True)
+        return week   
     
     st.cache()
     def get_month(series):
@@ -187,44 +215,16 @@ if sidebar == "Time":
         year = year.loc[(year['year'] < 50) & (year['year'] > 0)]
         year['year'] = 'Year ' + year['year'].astype(str)
         return year
-    
-    
-    day = list(rleaves.raw.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
-    day = [int(item) for item in re.findall(r'\d+', str(day))]
-    day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
-    day_week = day.copy()
-    day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
-    day['day'] = 'Day ' + day['day'].astype(str)
-    day.sort_values(by='count', ascending=False, inplace=True) 
-     
-    day_week = day_to_week(day_week)
-    day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
-    day_week = day_week[day_week['count'] > 1]
-    day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
-    week = list(rleaves.raw.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
-    week = [int(item) for item in re.findall(r'\d+', str(week))]
-    week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
-    week = week[week.index < 35]
-    week.index = 'Week ' + week.index.astype(str)
-    week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
-    week[['count','w_count']] = week[['count','w_count']].astype(int)
-    week['total_count'] = week['count'] + week['w_count']
-    week.sort_values(by='total_count', ascending=False, inplace=True)
-    
-  
+ 
     # This section is for plotting 'day' mentions in subreddit
     with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
         st.markdown('XXX')
-    plot(day, 'Day')
+    plot(get_day(rleaves['raw'])[0], 'Day')
     
     # This section is for plotting 'week' mentions in subreddit
     with st.beta_expander("Which week during an author's journey had the most post?", expanded=True):
         st.markdown('XXX')        
-    fig = px.bar(week, x='index', y='total_count', template='plotly_white')
-    fig.update_yaxes(visible=False)
-    fig.update_xaxes(title_text='Week')
-    fig.update_traces(marker_color='salmon')
-    st.plotly_chart(fig)
+    plot(get_week(rleaves['raw']), 'Week')
     
     # This section is for plotting 'month' mentions in subreddit
     with st.beta_expander("Which month during an author's journey had the most post?", expanded=True):
