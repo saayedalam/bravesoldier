@@ -9,4 +9,4 @@
 :office_worker: This analysis is the result of discovering what lies in this intersection. Reddit is one the top 20 website in the world and it has several subreddit which are support groups for those who want to leave the life of addiction behind. One of those subreddit is my intersection of interest. :point_right: *[r/leaves](https://www.reddit.com/r/leaves/)* is a support and recovery community for practical discussions about how to quit pot, weed, cannabis, edibles, BHO, shatter, or whatever THC-related product, and support in staying stopped. :leaves:
 
 :raising_hand: What are the most used words in this subreddit? :eye::point_down:
-:flag-us: 
+:flag_united_states: 
