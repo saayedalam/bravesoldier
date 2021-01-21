@@ -1,3 +1,4 @@
+import urllib
 import streamlit as st
 from PIL import Image
 
@@ -15,13 +16,13 @@ def main():
 
 def introduction():
     intro = st.beta_expander('Introduction', expanded=True)
-    intro.markdown(get_file_content_as_string("instructions.md"))
+    intro.write(get_file_content_as_string("introduction.md"))
     image = Image.open('wordcloud_user_leaves.png')
     st.image(image, caption='Word Cloud of r/leaves', use_column_width=True)
     
-@st.cache(show_spinner=False)
+#@st.cache(show_spinner=False)
 def get_file_content_as_string(path):
-    url = 'https://raw.githubusercontent.com/streamlit/demo-self-driving/master/' + path
+    url = 'https://raw.githubusercontent.com/saayedalam/bravesoldier/main/notebooks/' + path
     response = urllib.request.urlopen(url)
     return response.read().decode("utf-8")
 
