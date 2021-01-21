@@ -12,7 +12,7 @@ import plotly.express as px
 import matplotlib.pyplot as plt
 
 warnings.filterwarnings("ignore")
-plt.set_loglevel('WARNING')
+#plt.set_loglevel('WARNING')
 sp = spacy.load('en_core_web_sm')
 
 from PIL import Image
@@ -28,13 +28,108 @@ from wordcloud import WordCloud, STOPWORDS
 from gensim.models import Word2Vec, KeyedVectors
 from nltk.tokenize import sent_tokenize, word_tokenize
 
-# sidebar
+# layout configuration
+st.set_page_config(layout="wide")
+st.markdown("# *Data Analysis* of **r/leaves**")
 st.sidebar.markdown("### r/leaves")
 sidebar = st.sidebar.radio("Table Of Content", ("Introduction", "Post", "Authors", "Time"))
 
-# title
-st.markdown("# *Data Analysis* of **r/leaves**")
+# Load the local files
+rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
+df1 = rleaves[['raw', 'time']]
 
+# a custom function for complete text cleanup
+@st.cache(show_spinner=False, ttl=300)
+def cleanup(text):
+    text = text.lower() # lowers the corpus
+    text = re.sub('http\S+', ' ', str(text)) # removes any url
+    text = re.sub('n\'t\s', ' not ', str(text))
+    text = re.sub('-(?<!\d)', ' ', str(text)) # removing hyphens from numbers
+    text = sp(text) # apply spacy model
+    text = [w.text for w in text if not w.is_stop] # tokenize and remove stop words
+    text = sp(' '.join(text)) # join words and apply spacy model again 
+    text = [w.lemma_ for w in text] # lemmatizes the words
+    stopwords_extra = ['im', 'na', 'u', 'ill', '10184285', '179180', 'as', 'oh', 'av', 'wo', 'nt', 'p', 'm', 'ta', '10000', '6000']
+    text = [word for word in text if not word in stopwords_extra] # remove additional unnecessary words
+    text = ' '.join(text)  # join the words back together  
+    text = text.translate(str.maketrans('', '', string.punctuation)) # removes all punctuation
+    text = re.sub('[^\w\s,]', ' ', str(text)) # removes emoticon and other non characters
+    text = re.sub('x200b', ' ', str(text)) # removing zero-width space characters
+    text = re.sub(' cannabi ', ' cannabis ', str(text))
+    return ' '.join([token for token in text.split()]) # removes trailing whitespaces
+
+# a custom function to change UTC time and split days and hours
+@st.cache(ttl=300)
+def change_time(utc):
+    day = dt.datetime.fromtimestamp(utc).strftime('%A')
+    hour = dt.datetime.fromtimestamp(utc).strftime('%I %p')
+    return pd.Series([day, hour])
+
+# apply preprocessing function
+rleaves[['day', 'hour']] = rleaves['time'].apply(change_time)
+rleaves['raw'] = pd.DataFrame(rleaves['raw'].apply(cleanup))
+df2 = rleaves[['raw', 'day', 'hour']]
+
+def plot(df, title):
+    fig = px.bar(df, x=df.iloc[:, 0], y=df.iloc[:, 1], template='plotly_white')
+    fig.update_yaxes(visible=False)
+    fig.update_xaxes(title_text=title)
+    fig.update_traces(marker_color='salmon')
+    st.plotly_chart(fig)
+    
+@st.cache(persist=True, ttl=300)
+def day_to_week(df):
+    return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
+
+@st.cache(ttl=300)
+def get_day(series):
+    day = list(series.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
+    day = [int(item) for item in re.findall(r'\d+', str(day))]
+    day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
+    day_week = day.copy()
+    day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
+    day['day'] = 'Day ' + day['day'].astype(str)
+    day.sort_values(by='count', ascending=False, inplace=True) 
+    return day, day_week
+
+@st.cache(ttl=300)
+def get_week(series):
+    #global day_week
+    week = list(series.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
+    week = [int(item) for item in re.findall(r'\d+', str(week))]
+    week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
+    week = week[week.index < 35]
+    week.index = 'Week ' + week.index.astype(str)
+    day_week = day_to_week(get_day(series)[1])
+    day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
+    day_week = day_week[day_week['count'] > 1]
+    day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
+    week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
+    week[['count','w_count']] = week[['count','w_count']].astype(int)
+    week['count'] = week['count'] + week['w_count']
+    week.sort_values(by='count', ascending=False, inplace=True)
+    week.drop(columns=['w_count'], inplace=True)
+    return week   
+
+@st.cache(ttl=300)
+def get_month(series):
+    month = list(series.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
+    month = [int(item) for item in re.findall(r'\d+', str(month))]
+    month = pd.DataFrame([[x, month.count(x)] for x in set(month)]).rename(columns={0:'month', 1:'count'}).sort_values(by='count', ascending=False)
+    month = month[month['month'] < 200]
+    month['month'] = 'Month ' + month['month'].astype(str)
+    return month
+
+@st.cache(ttl=300)
+def get_year(series):
+    year = list(series.str.findall('\d+\s*ye?a?r[s\s]*')) 
+    year = [int(item) for item in re.findall(r'\d+', str(year))]
+    year = pd.DataFrame([[x, year.count(x)] for x in set(year)]).rename(columns={0:'year', 1:'count'}).sort_values(by='count', ascending=False)
+    year = year.loc[(year['year'] < 50) & (year['year'] > 0)]
+    year['year'] = 'Year ' + year['year'].astype(str)
+    return year
+
+# Selecting Introduction sidebar will show the following content
 if sidebar == "Introduction":
     intro = st.beta_expander('Introduction', expanded=True)
     intro.write("""*r/leaves* is a support and recovery community for practical discussions about how to quit pot, weed, cannabis, edibles, BHO, shatter, or whatever THC-related product, and support in staying stopped.""")
@@ -56,43 +151,6 @@ wordcloud_user.generate(wordcloud_text)
 #wordcloud_user.to_file("wordcloud_user_leaves.png") # saves the image
 plot_cloud(wordcloud_user)'''
         st.code(code, language='python')
-                
-        
-# Load the local files
-rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
-df1 = rleaves[['raw', 'time']]
-
-# a custom function for complete text cleanup
-@st.cache
-def cleanup1(text):
-    text = text.lower() # lowers the corpus
-    text = re.sub('http\S+', ' ', str(text)) # removes any url
-    text = re.sub('n\'t\s', ' not ', str(text))
-    text = re.sub('-(?<!\d)', ' ', str(text)) # removing hyphens from numbers
-    text = sp(text) # apply spacy model
-    text = [w.text for w in text if not w.is_stop] # tokenize and remove stop words
-    text = sp(' '.join(text)) # join words and apply spacy model again 
-    text = [w.lemma_ for w in text] # lemmatizes the words
-    stopwords_extra = ['im', 'na', 'u', 'ill', '10184285', '179180', 'as', 'oh', 'av', 'wo', 'nt', 'p', 'm', 'ta', '10000', '6000']
-    text = [word for word in text if not word in stopwords_extra] # remove additional unnecessary words
-    text = ' '.join(text)  # join the words back together  
-    text = text.translate(str.maketrans('', '', string.punctuation)) # removes all punctuation
-    text = re.sub('[^\w\s,]', ' ', str(text)) # removes emoticon and other non characters
-    text = re.sub('x200b', ' ', str(text)) # removing zero-width space characters
-    text = re.sub(' cannabi ', ' cannabis ', str(text))
-    return ' '.join([token for token in text.split()]) # removes trailing whitespaces
-
-# a custom function to change UTC time and split days and hours
-@st.cache
-def change_time(utc):
-    day = dt.datetime.fromtimestamp(utc).strftime('%A')
-    hour = dt.datetime.fromtimestamp(utc).strftime('%I %p')
-    return pd.Series([day, hour])
-
-# apply preprocessing function
-rleaves[['day', 'hour']] = rleaves['time'].apply(change_time)
-rleaves['raw'] = pd.DataFrame(rleaves['raw'].apply(cleanup1))
-df2 = rleaves[['raw', 'day', 'hour']]
 
 # display the data
 if sidebar == "Post":
@@ -157,65 +215,6 @@ rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1
     
 # Time Sidebar    
 if sidebar == "Time":    
-    def plot(df, title):
-        fig = px.bar(df, x=df.iloc[:, 0], y=df.iloc[:, 1], template='plotly_white')
-        fig.update_yaxes(visible=False)
-        fig.update_xaxes(title_text=title)
-        fig.update_traces(marker_color='salmon')
-        st.plotly_chart(fig)
-    
-    st.cache()
-    def day_to_week(df):
-        return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
-    
-    st.cache()
-    def get_day(series):
-        day = list(series.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
-        day = [int(item) for item in re.findall(r'\d+', str(day))]
-        day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
-        day_week = day.copy()
-        day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
-        day['day'] = 'Day ' + day['day'].astype(str)
-        day.sort_values(by='count', ascending=False, inplace=True) 
-        return day, day_week
-    
-    st.cache()
-    def get_week(series):
-        #global day_week
-        week = list(series.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
-        week = [int(item) for item in re.findall(r'\d+', str(week))]
-        week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
-        week = week[week.index < 35]
-        week.index = 'Week ' + week.index.astype(str)
-        day_week = day_to_week(get_day(series)[1])
-        day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
-        day_week = day_week[day_week['count'] > 1]
-        day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
-        week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
-        week[['count','w_count']] = week[['count','w_count']].astype(int)
-        week['count'] = week['count'] + week['w_count']
-        week.sort_values(by='count', ascending=False, inplace=True)
-        week.drop(columns=['w_count'], inplace=True)
-        return week   
-    
-    st.cache()
-    def get_month(series):
-        month = list(series.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
-        month = [int(item) for item in re.findall(r'\d+', str(month))]
-        month = pd.DataFrame([[x, month.count(x)] for x in set(month)]).rename(columns={0:'month', 1:'count'}).sort_values(by='count', ascending=False)
-        month = month[month['month'] < 200]
-        month['month'] = 'Month ' + month['month'].astype(str)
-        return month
-
-    st.cache()
-    def get_year(series):
-        year = list(series.str.findall('\d+\s*ye?a?r[s\s]*')) 
-        year = [int(item) for item in re.findall(r'\d+', str(year))]
-        year = pd.DataFrame([[x, year.count(x)] for x in set(year)]).rename(columns={0:'year', 1:'count'}).sort_values(by='count', ascending=False)
-        year = year.loc[(year['year'] < 50) & (year['year'] > 0)]
-        year['year'] = 'Year ' + year['year'].astype(str)
-        return year
- 
     # This section is for plotting 'day' mentions in subreddit
     with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
         st.markdown('XXX')
