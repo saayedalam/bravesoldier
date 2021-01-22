@@ -29,46 +29,46 @@ from gensim.models import Word2Vec, KeyedVectors
 from nltk.tokenize import sent_tokenize, word_tokenize
 
 # layout configuration
-st.set_page_config(layout="wide")
-st.markdown("# *Data Analysis* of **r/leaves**")
-st.sidebar.markdown("### r/leaves")
-sidebar = st.sidebar.radio("Table Of Content", ("Introduction", "Post", "Authors", "Time"))
-
-# Load the local files
-rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
-df1 = rleaves[['raw', 'time']]
-
-# a custom function for complete text cleanup
-@st.cache(show_spinner=False, ttl=300)
-def cleanup(text):
-    text = text.lower() # lowers the corpus
-    text = re.sub('http\S+', ' ', str(text)) # removes any url
-    text = re.sub('n\'t\s', ' not ', str(text))
-    text = re.sub('-(?<!\d)', ' ', str(text)) # removing hyphens from numbers
-    text = sp(text) # apply spacy model
-    text = [w.text for w in text if not w.is_stop] # tokenize and remove stop words
-    text = sp(' '.join(text)) # join words and apply spacy model again 
-    text = [w.lemma_ for w in text] # lemmatizes the words
-    stopwords_extra = ['im', 'na', 'u', 'ill', '10184285', '179180', 'as', 'oh', 'av', 'wo', 'nt', 'p', 'm', 'ta', '10000', '6000']
-    text = [word for word in text if not word in stopwords_extra] # remove additional unnecessary words
-    text = ' '.join(text)  # join the words back together  
-    text = text.translate(str.maketrans('', '', string.punctuation)) # removes all punctuation
-    text = re.sub('[^\w\s,]', ' ', str(text)) # removes emoticon and other non characters
-    text = re.sub('x200b', ' ', str(text)) # removing zero-width space characters
-    text = re.sub(' cannabi ', ' cannabis ', str(text))
-    return ' '.join([token for token in text.split()]) # removes trailing whitespaces
-
-# a custom function to change UTC time and split days and hours
-@st.cache(ttl=300)
-def change_time(utc):
-    day = dt.datetime.fromtimestamp(utc).strftime('%A')
-    hour = dt.datetime.fromtimestamp(utc).strftime('%I %p')
-    return pd.Series([day, hour])
-
-# apply preprocessing function
-rleaves[['day', 'hour']] = rleaves['time'].apply(change_time)
-rleaves['raw'] = pd.DataFrame(rleaves['raw'].apply(cleanup))
-df2 = rleaves[['raw', 'day', 'hour']]
+#st.set_page_config(layout="wide")
+#st.markdown("# *Data Analysis* of **r/leaves**")
+#st.sidebar.markdown("### r/leaves")
+#sidebar = st.sidebar.radio("Table Of Content", ("Introduction", "Post", "Authors", "Time"))
+#
+## Load the local files
+#rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
+#df1 = rleaves[['raw', 'time']]
+#
+## a custom function for complete text cleanup
+#@st.cache(show_spinner=False, ttl=300)
+#def cleanup(text):
+#    text = text.lower() # lowers the corpus
+#    text = re.sub('http\S+', ' ', str(text)) # removes any url
+#    text = re.sub('n\'t\s', ' not ', str(text))
+#    text = re.sub('-(?<!\d)', ' ', str(text)) # removing hyphens from numbers
+#    text = sp(text) # apply spacy model
+#    text = [w.text for w in text if not w.is_stop] # tokenize and remove stop words
+#    text = sp(' '.join(text)) # join words and apply spacy model again 
+#    text = [w.lemma_ for w in text] # lemmatizes the words
+#    stopwords_extra = ['im', 'na', 'u', 'ill', '10184285', '179180', 'as', 'oh', 'av', 'wo', 'nt', 'p', 'm', 'ta', '10000', '6000']
+#    text = [word for word in text if not word in stopwords_extra] # remove additional unnecessary words
+#    text = ' '.join(text)  # join the words back together  
+#    text = text.translate(str.maketrans('', '', string.punctuation)) # removes all punctuation
+#    text = re.sub('[^\w\s,]', ' ', str(text)) # removes emoticon and other non characters
+#    text = re.sub('x200b', ' ', str(text)) # removing zero-width space characters
+#    text = re.sub(' cannabi ', ' cannabis ', str(text))
+#    return ' '.join([token for token in text.split()]) # removes trailing whitespaces
+#
+## a custom function to change UTC time and split days and hours
+#@st.cache(ttl=300)
+#def change_time(utc):
+#    day = dt.datetime.fromtimestamp(utc).strftime('%A')
+#    hour = dt.datetime.fromtimestamp(utc).strftime('%I %p')
+#    return pd.Series([day, hour])
+#
+## apply preprocessing function
+#rleaves[['day', 'hour']] = rleaves['time'].apply(change_time)
+#rleaves['raw'] = pd.DataFrame(rleaves['raw'].apply(cleanup))
+#df2 = rleaves[['raw', 'day', 'hour']]
 
 def plot(df, title):
     fig = px.bar(df, x=df.iloc[:, 0], y=df.iloc[:, 1], template='plotly_white')
