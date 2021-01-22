@@ -8,21 +8,23 @@ from PIL import Image
 from collections import Counter
 
 def main():
-    # layout configuration
+    # Streamlit Layout Configuration
     st.set_page_config(page_title='by Saayed Alam', page_icon=':leaves:')
     st.markdown("# *Data Analysis* of **r/leaves**")
     st.sidebar.markdown("### r/leaves")
     sidebar = st.sidebar.radio("Table Of Content",
                                ("Introduction", "Post", "Authors", "Time"))
-    
+    # Sidebar Selection
     if sidebar == "Introduction":
         introduction()
     elif sidebar == "Post":
         posts()
 
 def introduction():
+    # Section 1: Introduction
     intro = st.beta_expander('Introduction', expanded=True)
     intro.markdown(get_file_content_as_string("introduction.md"))
+    # Section 2: Word Cloud PNG
     image = Image.open('wordcloud_user_leaves.png')
     st.image(image, caption='Word Cloud of r/leaves', use_column_width=True)
     with st.beta_expander("Code"):
@@ -30,8 +32,11 @@ def introduction():
         
 def posts():
     # Section 1 : Displays before and after texts
-    intro = st.beta_expander('Before & After of Posts Cleanup', expanded=False)
-    intro.markdown("![Alt](https://media.giphy.com/media/26gscNQHswYio5RBu/giphy.gif)")
+    intro = st.beta_expander('Before & After of Posts Cleanup')
+    intro.markdown(''':dart: The truth is cleaning text was the most time consuming and nerve wracking part of this project. 
+However, if Data Science can be sexy, so can be cleaning. :smirk::point_down: \n I used [Spacy](https://spacy.io/) and Python 
+to transform all the data by lowering, regexing, lemmatizing; and removing stopwords, emojis, and spaces. :tired_face: 
+\n ![Alt](https://media.giphy.com/media/26gscNQHswYio5RBu/giphy.gif)''')
     df1 = pd.read_csv('rleaves.csv', encoding='utf-8')
     df1 = df1[['raw', 'time']]
     df2 = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
@@ -39,10 +44,10 @@ def posts():
     col1.dataframe(df1)
     col2.dataframe(df2)
     with st.beta_expander("Code"):
-        st.code(get_file_content_as_string("text_cleanup.py"), language='python')
-    
+        st.code(get_file_content_as_string("text_cleanup.py"), language='python')    
     # Section 2 : lets user select most used words
-    st.subheader("Most Used Words of r/leaves")
+    with st.beta_expander("Most Used Words of r/leaves"):
+        st.markdown("Hello")
     number = st.number_input('Select a number to show count', max_value=85229, value=50) # streamlit
     plot(get_top_words(df2['raw'], number), 'Top Words', 'green')
     
