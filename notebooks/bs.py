@@ -1,9 +1,9 @@
 import urllib
+import inspect
 import textacy.ke
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-
 from PIL import Image
 from collections import Counter
 
@@ -32,11 +32,11 @@ def introduction():
         
 def posts():
     # Section 1 : Displays before and after texts
-    intro = st.beta_expander('Before & After of Posts Cleanup')
+    intro = st.beta_expander('Before & After of Posts Cleanup', expanded=True)
     intro.markdown(''':dart: The truth is cleaning text was the most time consuming and nerve wracking part of this project. 
-However, if Data Science can be sexy, so can be cleaning. :smirk::point_down: \n I used [Spacy](https://spacy.io/) and Python 
-to transform all the data by lowering, regexing, lemmatizing; and removing stopwords, emojis, and spaces. :tired_face: 
-\n ![Alt](https://media.giphy.com/media/26gscNQHswYio5RBu/giphy.gif)''')
+    However, if Data Science can be sexy, so can be cleaning. :smirk::point_down: \n I used [Spacy](https://spacy.io/) and Python 
+    to transform all the data by lowering, regexing, lemmatizing; and removing stopwords, emojis, and spaces. :tired_face:   
+    ![Alt](https://media.giphy.com/media/26gscNQHswYio5RBu/giphy.gif)''')
     df1 = pd.read_csv('rleaves.csv', encoding='utf-8')
     df1 = df1[['raw', 'time']]
     df2 = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
@@ -46,14 +46,25 @@ to transform all the data by lowering, regexing, lemmatizing; and removing stopw
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("text_cleanup.py"), language='python')    
     # Section 2 : lets user select most used words
-    with st.beta_expander("Most Used Words of r/leaves"):
-        st.markdown("Hello")
-    number = st.number_input('Select a number to show count', max_value=85229, value=50) # streamlit
+    with st.beta_expander("Most Used Words of r/leaves", expanded=True):
+        st.markdown('''![time](https://media.giphy.com/media/9u514UZd57mRhnBCEk/giphy.gif)   
+        :1234: If you are subscribed to r/leaves, these top words are not that surprising. The topic of discussion
+        weed is the most used word followed by several mentions of time. In my opinion, people mourn the loss of time due to intoxication. 
+        To see more words and the frequency of their appearance. :point_down:''')
+    number = st.number_input('Select A Number:', max_value=85229, value=50) # streamlit
     plot(get_top_words(df2['raw'], number), 'Top Words', 'green')
-    
+    with st.beta_expander("Code"):
+        st.code(get_file_content_as_string("rleaves_wc.py"), language='python') 
     # Section 3: Shows top ranked bigram words using yake algorithm
-    st.subheader('Most Important Bigram Word using YAKE! Algorithm')
+    with st.beta_expander('Most Important Bigram Word using YAKE! Algorithm'):
+        st.markdown('''![wtf](https://media.giphy.com/media/pPhyAv5t9V8djyRFJH/giphy.gif)   
+        What is a YAKE! Algorithm you make ask.    
+        *YAKE! is a light-weight unsupervised automatic keyword extraction method which rests on text statistical 
+        features extracted from single documents to select the most important keywords of a text.*   
+        :hourglass_flowing_sand: As we can see from the table, time and marijuana are inseparable in r/leaves. :leaves:''')
     st.table(get_top_ranked(df2['raw']))    
+    with st.beta_expander("Code"):
+        st.code(inspect.getsource(get_top_ranked), language='python')  
     
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
