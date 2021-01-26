@@ -1,6 +1,8 @@
+import re
 import urllib
 import inspect
 import textacy.ke
+import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.express as px
@@ -13,12 +15,21 @@ def main():
     st.markdown("# *Data Analysis* of **r/leaves**")
     st.sidebar.markdown("### r/leaves")
     sidebar = st.sidebar.radio("Table Of Content",
-                               ("Introduction", "Post", "Authors", "Time"))
+                               ("Introduction", "Post", "Authors", "Time", "Conclusion"))
+    # Load the data
+    df = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
     # Sidebar Selection
     if sidebar == "Introduction":
         introduction()
     elif sidebar == "Post":
-        posts()
+        posts(df)
+    elif sidebar == "Authors":
+        authors(df)
+    elif sidebar == "Time":
+        st.sidebar.info('Please give few seconds for it to load.')
+        time(df)
+    elif sidebar == "Conclusion":
+        st.empty()
 
 def introduction():
     # Section 1: Introduction
@@ -30,7 +41,7 @@ def introduction():
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("rleaves_wc.py"), language='python')
         
-def posts():
+def posts(data):
     # Section 1 : Displays before and after texts
     intro = st.beta_expander('Before & After of Posts Cleanup', expanded=True)
     intro.markdown(''':dart: The truth is cleaning text was the most time consuming and nerve wracking part of this project. 
@@ -39,10 +50,10 @@ def posts():
     ![Alt](https://media.giphy.com/media/26gscNQHswYio5RBu/giphy.gif)''')
     df1 = pd.read_csv('rleaves.csv', encoding='utf-8')
     df1 = df1[['raw', 'time']]
-    df2 = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
+    #df2 = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
     col1, col2 = st.beta_columns(2)
     col1.dataframe(df1)
-    col2.dataframe(df2)
+    col2.dataframe(data)
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("text_cleanup.py"), language='python')    
     # Section 2 : lets user select most used words
@@ -50,22 +61,70 @@ def posts():
         st.markdown('''![time](https://media.giphy.com/media/9u514UZd57mRhnBCEk/giphy.gif)   
         :1234: If you are subscribed to r/leaves, these top words are not that surprising. The topic of discussion
         weed is the most used word followed by several mentions of time. In my opinion, people mourn the loss of time due to intoxication. 
-        To see more words and the frequency of their appearance. :point_down:''')
+        To see more words and the frequency of their appearance. :point_down:   
+        :helicopter: P.S. You can hover over a bar to see more details.''')
     number = st.number_input('Select A Number:', max_value=85229, value=50) # streamlit
-    plot(get_top_words(df2['raw'], number), 'Top Words', 'green')
+    plot(get_top_words(data['raw'], number), 'Top Words', 'green')
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("rleaves_wc.py"), language='python') 
     # Section 3: Shows top ranked bigram words using yake algorithm
-    with st.beta_expander('Most Important Bigram Word using YAKE! Algorithm'):
+    with st.beta_expander('Most Important Bigram Word using YAKE! Algorithm', expanded=True):
         st.markdown('''![wtf](https://media.giphy.com/media/pPhyAv5t9V8djyRFJH/giphy.gif)   
         What is a YAKE! Algorithm you make ask.    
         *YAKE! is a light-weight unsupervised automatic keyword extraction method which rests on text statistical 
         features extracted from single documents to select the most important keywords of a text.*   
         :hourglass_flowing_sand: As we can see from the table, time and marijuana are inseparable in r/leaves. :leaves:''')
-    st.table(get_top_ranked(df2['raw']))    
+    st.table(get_top_ranked(data['raw']))    
     with st.beta_expander("Code"):
         st.code(inspect.getsource(get_top_ranked), language='python')  
-    
+        
+def authors(data):
+    # Section 1: Some stats about the posters frequency of posts by day
+    with st.beta_expander("Frequency of Posts by Day", expanded=True):
+        st.markdown(':calendar: **Mondays** saw more new posts than any other days. In my opinion, it is because with the start of a new week, users wanted to have a new start. Whereas, **Fridays** and **Saturdays** were harder because people tend to hang out those days.')
+    with st.echo(code_location='below'):
+        fig1 = pd.DataFrame(data['day'].value_counts()).reset_index()
+        fig1.rename(columns={"index": "day", "day": "count"})
+        plot(fig1, 'Number of Posts per Day', 'plum')
+    # Section 2: same as above buy per hours
+    with st.beta_expander("Frequency of Posts by Day", expanded=True):
+        st.markdown(':calendar: Late nights saw very few posts. For instance, from **12 AM** to **4 AM** we see the least amount of posts. In my opinion, it is harder to have stong will power at that time of the hour. Whereas early mornings saw most posts, i.e. **7 AM** - **1 PM**, than others. I believe it is due to us having a more clearer mind after a good night of sleep and being able to make more rationale decisions.')
+    with st.echo(code_location='below'):
+        fig1 = pd.DataFrame(data['hour'].value_counts()).reset_index()
+        fig1.rename(columns={"index": "time", "hour": "count"})
+        plot(fig1, 'Number of Posts per Hour', 'plum')
+    # Section 3: some anonymous stats about the authors
+    with st.beta_expander("Frequency of Posts by Authors", expanded=True):
+        st.markdown(''':lock: Due to privacy concerns, I did not use redittors' data for analyzation. However, I pulled the following statistics.   
+        ![stat](https://media.giphy.com/media/CtqI1GmvT0YVO/giphy.gif)  
+        :chart_with_upwards_trend: **805** authors appeared in the top 1000 posts of all time.  
+        :chart_with_upwards_trend: **81.23%** of those posts are by unique authors.  
+        :chart_with_upwards_trend: **77 authors** have more than one post.''')
+    with st.beta_expander("Code"):
+        st.code("""round(rleaves['author'].nunique()/rleaves.shape[0]*100, 2)
+rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1].shape[0]""")
+        
+def time(data):
+    # Section 1: This section is for plotting 'day' mentions in subreddit
+    with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')
+    plot(get_day(data['raw'])[0], 'Day', 'salmon')    
+    # Section 2: This section is for plotting 'week' mentions in subreddit
+    with st.beta_expander("Which week during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    plot(get_week(data['raw']), 'Week', 'salmon')    
+    # Section 3: This section is for plotting 'month' mentions in subreddit
+    with st.beta_expander("Which month during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    plot(get_month(data['raw']), 'Month', 'salmon')    
+    # # Section 4: This section is for plotting 'day' mentions in subreddit
+    with st.beta_expander("Which year during an author's journey had the most post?", expanded=True):
+        st.markdown('XXX')        
+    plot(get_year(data['raw']), 'Year', 'salmon')
+    # Section 5: code for all the plots
+    with st.beta_expander("Code"):
+        st.code(inspect.getsource(plot), language='python')     
+        
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
     url = 'https://raw.githubusercontent.com/saayedalam/bravesoldier/main/notebooks/' + path
@@ -92,7 +151,58 @@ def get_top_ranked(data):
     doc = textacy.make_spacy_doc(text, lang=en)
     df = pd.DataFrame(textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10)).rename(columns={0: "Most Important Keywords", 1: "YAKE! Score"})
     return df
-    
+
+@st.cache()
+def day_to_week(df):
+    return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
+
+@st.cache()
+def get_day(series):
+    day = list(series.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
+    day = [int(item) for item in re.findall(r'\d+', str(day))]
+    day = pd.DataFrame([[x, day.count(x)] for x in set(day)]).rename(columns={0:'day', 1:'count'})
+    day_week = day.copy()
+    day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
+    day['day'] = 'Day ' + day['day'].astype(str)
+    day.sort_values(by='count', ascending=False, inplace=True) 
+    return day, day_week
+
+@st.cache()
+def get_week(series):
+    #global day_week
+    week = list(series.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
+    week = [int(item) for item in re.findall(r'\d+', str(week))]
+    week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
+    week = week[week.index < 35]
+    week.index = 'Week ' + week.index.astype(str)
+    day_week = day_to_week(get_day(series)[1])
+    day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
+    day_week = day_week[day_week['count'] > 1]
+    day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
+    week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
+    week[['count','w_count']] = week[['count','w_count']].astype(int)
+    week['count'] = week['count'] + week['w_count']
+    week.sort_values(by='count', ascending=False, inplace=True)
+    week.drop(columns=['w_count'], inplace=True)
+    return week   
+
+@st.cache()
+def get_month(series):
+    month = list(series.str.findall(r'\d+\s*month[s\s]|\s*month\s*\d+'))
+    month = [int(item) for item in re.findall(r'\d+', str(month))]
+    month = pd.DataFrame([[x, month.count(x)] for x in set(month)]).rename(columns={0:'month', 1:'count'}).sort_values(by='count', ascending=False)
+    month = month[month['month'] < 200]
+    month['month'] = 'Month ' + month['month'].astype(str)
+    return month
+
+@st.cache()
+def get_year(series):
+    year = list(series.str.findall('\d+\s*ye?a?r[s\s]*')) 
+    year = [int(item) for item in re.findall(r'\d+', str(year))]
+    year = pd.DataFrame([[x, year.count(x)] for x in set(year)]).rename(columns={0:'year', 1:'count'}).sort_values(by='count', ascending=False)
+    year = year.loc[(year['year'] < 50) & (year['year'] > 0)]
+    year['year'] = 'Year ' + year['year'].astype(str)
+    return year
 
 if __name__ == "__main__":
     main()
