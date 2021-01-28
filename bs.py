@@ -9,6 +9,7 @@ import plotly.express as px
 from textacy import *
 from PIL import Image
 from collections import Counter
+from streamlit_disqus import st_disqus
 
 def main():
     # Streamlit Layout Configuration
@@ -37,6 +38,7 @@ def main():
         ![next](https://media.giphy.com/media/u3F09PUxoQ11QXdItB/giphy.gif)  
         ''')
         st.balloons()
+        st_disqus("streamlit-disqus-demo")
 
 def introduction():
     # Section 1: Introduction
