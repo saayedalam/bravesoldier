@@ -37,7 +37,6 @@ def main():
         :star2: Change is possible no matter how long it takes.   
         ![next](https://media.giphy.com/media/u3F09PUxoQ11QXdItB/giphy.gif)  
         ''')
-        st.balloons()
         st_disqus("saayedalam")
 
 def introduction():
