@@ -41,7 +41,7 @@ def main():
 def introduction():
     # Section 1: Introduction
     intro = st.beta_expander('Introduction', expanded=True)
-    intro.markdown(get_file_content_as_string("introduction.md"))
+    intro.markdown(get_file_content_as_string("README.md"))
     # Section 2: Word Cloud PNG
     image = Image.open('wordcloud_user_leaves.png')
     st.image(image, caption='Word Cloud of r/leaves', use_column_width=True)
@@ -146,7 +146,7 @@ def time(data):
         
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
-    url = 'https://raw.githubusercontent.com/saayedalam/bravesoldier/main/notebooks/' + path
+    url = 'https://raw.githubusercontent.com/saayedalam/bravesoldier/main/' + path
     response = urllib.request.urlopen(url)
     return response.read().decode("utf-8")
 
