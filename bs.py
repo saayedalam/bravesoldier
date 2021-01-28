@@ -38,7 +38,7 @@ def main():
         ![next](https://media.giphy.com/media/u3F09PUxoQ11QXdItB/giphy.gif)  
         ''')
         st.balloons()
-        st_disqus("Brave Soldier")
+        st_disqus("Brave_Soldier")
 
 def introduction():
     # Section 1: Introduction
