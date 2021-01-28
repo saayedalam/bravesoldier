@@ -29,7 +29,13 @@ def main():
         st.sidebar.info('Please give few seconds for it to load.')
         time(df)
     elif sidebar == "Conclusion":
-        st.empty()
+        st.markdown(''':rewind: I believe there is more to learn from this subreddit. And I plan to explore more using natural language processing and machine learning. Nonetheless, I learned the following so far from r/leaves. :points_down:  
+        :star2: Time is felt differently when one is high in contrast to when one is sober. Hence, the importance of time.    
+        :star2: The start of a day or the start of a week are most succesfull time for a change.   
+        :star2: Change is possible no matter how long it takes.   
+        ![next](https://media.giphy.com/media/u3F09PUxoQ11QXdItB/giphy.gif)  
+        ''')
+    st.balloons()
 
 def introduction():
     # Section 1: Introduction
@@ -106,20 +112,32 @@ rleaves['author'].value_counts().loc[rleaves['author'].value_counts().values > 1
         
 def time(data):
     # Section 1: This section is for plotting 'day' mentions in subreddit
-    with st.beta_expander("Which day during an author's journey had the most post?", expanded=True):
-        st.markdown('XXX')
+    with st.beta_expander("Frequency of Reported Duration by Day", expanded=True):
+        st.markdown('''![day](https://media.giphy.com/media/CxTLB1wMzPviR8fW4S/giphy.gif)  
+        If you read any of the post, you will notice most of the posts start something like this, "*Day 1, Today I stop smoking.*" or "*Day 30, I feel like a new person*". My goal was to extract such reported days.  
+        :chart: The plot tells us two things:  
+        :small_red_triangle: First **seven days** are reported the most. After which the number drops. It could be because the author stopped posting or the author returned to smoking.  
+        :small_red_triangle: Milestone numbers are reported more frequently such as **Day 7**, **10** and **30**.''')
     plot(get_day(data['raw'])[0], 'Day', 'salmon')    
     # Section 2: This section is for plotting 'week' mentions in subreddit
-    with st.beta_expander("Which week during an author's journey had the most post?", expanded=True):
-        st.markdown('XXX')        
+    with st.beta_expander("Frequency of Reported Duration by Week", expanded=True):
+        st.markdown(''':chart: The graph is similar to days as we can infer two things from it:  
+        :small_red_triangle: **First week** is reported more than half of the mentions; followed by **Week 2**, **3**, and **4**.  
+        :small_red_triangle: Only first week seems to be the milestone among the authors.''')        
     plot(get_week(data['raw']), 'Week', 'salmon')    
     # Section 3: This section is for plotting 'month' mentions in subreddit
-    with st.beta_expander("Which month during an author's journey had the most post?", expanded=True):
-        st.markdown('XXX')        
+    with st.beta_expander("Frequency of Reported Duration by Month", expanded=True):
+        st.markdown('''![month](https://media.giphy.com/media/d1GpZTVp2eV7gQk8/giphy.gif)  
+        :small_red_triangle: First thing we notice, months are reported more than the weeks.  
+        :small_red_triangle: First six months are significant milestones. After which the number drops off drastically.   
+        :small_red_triangle: **Month 6** is mentioned more than **Month 1**. It could be because authors counted their abstinence by day.  ''')        
     plot(get_month(data['raw']), 'Month', 'salmon')    
     # # Section 4: This section is for plotting 'day' mentions in subreddit
-    with st.beta_expander("Which year during an author's journey had the most post?", expanded=True):
-        st.markdown('XXX')        
+    with st.beta_expander("Frequency of Reported Duration by Year* ", expanded=True):
+        st.markdown(''':keycap_star: The number of *year* extracted is ambiguous.  
+        :small_red_triangle: **Year** mentioned could be the age of the author.  
+        :small_red_triangle:  Or, number of years elapsed since the author has smoked.  
+        ![year](https://media.giphy.com/media/d3yxg15kJppJilnW/giphy.gif)''')        
     plot(get_year(data['raw']), 'Year', 'salmon')
     # Section 5: code for all the plots
     with st.beta_expander("Code"):
