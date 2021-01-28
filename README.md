@@ -1,1 +1,11 @@
-# bravesoldier
+:wave: How was your 2020? I had a :roller_coaster: ride. If I had to generalize how 2020 was for everyone... :point_down:
+
+![2020](https://media.giphy.com/media/RJKHjCAdsAfQPn03qQ/giphy.gif)
+
+:expressionless: Earnestly, one of the changes due to COVID-19 is the rise of anxiety and depression. [Washington Post](https://www.washingtonpost.com/health/2020/05/04/mental-health-coronavirus/) reported, *"The coronavirus pandemic is pushing America into a mental health crisis"*. Also [APA](https://www.apa.org/news/press/releases/2020/11/anxiety-depression-treatment) reported, *"Psychologists Report Large Increase In Demand For Anxiety, Depression Treatment"*. And, [LiveScience](https://www.livescience.com/depression-anxiety-increase-covid-19.html) reported, *"Depression and anxiety are skyrocketing in young adults amid pandemic"*. This is only in USA.
+
+:anguished: COVID-19 has also increased the use of recreational drug marijuana. [Global News](https://globalnews.ca/news/7573757/covid-cannabis-use-canada-survey/) reported, *"Canadian cannabis users report increased use over pandemic, worrying experts"*. Also [CNN](https://www.cnn.com/2021/01/20/health/marijuana-abuse-teens-suicide-wellness/index.html) reported, *"Marijuana abuse by youth with mood disorders linked to suicide attempts, self-harm and death, study finds"*. And, [Forbes](https://www.forbes.com/sites/emilyearlenbaugh/2020/09/25/medical-cannabis-use-for-mental-health-increased-during-covid-19-pandemic-study-finds/?sh=252e52c86d3f) reported, *"Medical Cannabis Use For Mental Health Increased During Covid-19 Pandemic, Study Finds"*. Weed and Anxiety are not always correlated but there is an intersection between the set of marijuanna users and anxiety sufferers. 
+
+:necktie: This analysis is the result of discovering what lies in this intersection. Reddit is one the top 20 website in the world and it has several subreddit which are support groups for those who want to leave the life of addiction behind. One of those subreddit is the intersection of interest. :point_right: *[r/leaves](https://www.reddit.com/r/leaves/)* is a support and recovery community for practical discussions about how to quit pot, weed, cannabis, edibles, BHO, shatter, or whatever THC-related product, and support in staying stopped. :leaves:
+
+:raising_hand: What are the most used words in this subreddit? :eye::point_down:
