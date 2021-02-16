@@ -148,12 +148,19 @@ def time(data):
         st.code(inspect.getsource(plot), language='python')     
         
 def emotions():
-    emote = pd.read_csv('rleaves_emotion.csv', encoding='utf-8')
-    emote = pd.DataFrame(emote['emotion'].value_counts().reset_index())
+    #
+    with st.beta_expander("Emotion Detection", expanded=True):
+        st.markdown('''Hello''')  
+    df = pd.read_csv('rleaves_emotion.csv', encoding='utf-8')
+    emote = pd.DataFrame(df['emotion'].value_counts().reset_index())
     plot(emote, 'Emotions', 'teal')
-    
+    #
     with st.beta_expander("Code"):
-        st.code(get_file_content_as_string("rleaves_emotion.py"), language='python') 
+        st.code(get_file_content_as_string("emotion_detection.py"), language='python')
+    #
+    color = st.radio('Select An Emotion', 
+                             options=['Joy', 'Sadness', 'Anger', 'Fear', 'Surprise', 'Love'])
+    st.table(df['post'][df['emotion'] == color.lower()].head())    
         
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
