@@ -17,7 +17,7 @@ def main():
     st.markdown("# *Data Analysis* of **r/leaves**")
     st.sidebar.markdown("### r/leaves")
     sidebar = st.sidebar.radio("Table Of Content",
-                               ("Introduction", "Post", "Authors", "Time", "Conclusion"))
+                               ("Introduction", "Post", "Authors", "Time", "Emotion", "Conclusion"))
     # Load the data
     df = pd.read_csv('rleaves_clean.csv', encoding='utf-8')
     # Sidebar Selection
@@ -30,6 +30,8 @@ def main():
     elif sidebar == "Time":
         st.sidebar.info('Please give few seconds for it to load.')
         time(df)
+    elif sidebar == "Emotion":
+        emotions()
     elif sidebar == "Conclusion":
         st.markdown(''':rewind: I believe there is more to learn from this subreddit. And I plan to explore more using natural language processing and machine learning. Nonetheless, I learned the following so far from r/leaves. :points_down:  
         :star2: Time is felt differently when one is high in contrast to when one is sober. Hence, the importance of time.    
@@ -144,6 +146,14 @@ def time(data):
     # Section 5: code for all the plots
     with st.beta_expander("Code"):
         st.code(inspect.getsource(plot), language='python')     
+        
+def emotions():
+    emote = pd.read_csv('rleaves_emotion.csv', encoding='utf-8')
+    emote = pd.DataFrame(emote['emotion'].value_counts().reset_index())
+    plot(emote, 'Emotions', 'teal')
+    
+    with st.beta_expander("Code"):
+        st.code(get_file_content_as_string("rleaves_emotion.py"), language='python') 
         
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
