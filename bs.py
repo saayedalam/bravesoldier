@@ -66,8 +66,7 @@ def posts(data):
         st.code(get_file_content_as_string("text_cleanup.py"), language='python')    
     # Section 2 : lets user select most used words
     with st.beta_expander("Most Used Words of r/leaves", expanded=True):
-        st.markdown('''![time](https://media.giphy.com/media/9u514UZd57mRhnBCEk/giphy.gif)   
-        :1234: If you are subscribed to r/leaves, these top words are not that surprising. The topic of discussion
+        st.markdown(''':1234: If you are subscribed to r/leaves, these top words are not that surprising. The topic of discussion
         weed is the most used word followed by several mentions of time. In my opinion, people mourn the loss of time due to intoxication. 
         To see more words and the frequency of their appearance. :point_down:   
         :helicopter: P.S. You can hover over a bar to see more details.''')
@@ -77,14 +76,13 @@ def posts(data):
         st.code(get_file_content_as_string("rleaves_wc.py"), language='python') 
     # Section 3: Shows top ranked bigram words using yake algorithm
     with st.beta_expander('Most Important Bigram Word using YAKE! Algorithm', expanded=True):
-        st.markdown('''![wtf](https://media.giphy.com/media/pPhyAv5t9V8djyRFJH/giphy.gif)   
-        What is a YAKE! Algorithm you make ask.    
+        st.markdown('''What is a YAKE! Algorithm you make ask.    
         *YAKE! is a light-weight unsupervised automatic keyword extraction method which rests on text statistical 
         features extracted from single documents to select the most important keywords of a text.*   
         :hourglass_flowing_sand: As we can see from the table, time and marijuana are inseparable in r/leaves. :leaves:''')
     st.table(pd.read_csv('rleaves_textrank.csv'))    
     with st.beta_expander("Code"):
-        st.code(get_file_content_as_string("rleaves_textrank.py"), language='python')  
+        st.code(get_file_content_as_string("textrank.py"), language='python')  
         
 def authors(data):
     # Section 1: Some stats about the posters frequency of posts by day
@@ -120,17 +118,16 @@ def time(data):
         :chart: The plot tells us two things:  
         :small_red_triangle: First **seven days** are reported the most. After which the number drops. It could be because the author stopped posting or the author returned to smoking.  
         :small_red_triangle: Milestone numbers are reported more frequently such as **Day 7**, **10** and **30**.''')
-    plot(get_day(data['raw'])[0], 'Day', 'salmon')    
+    plot(get_day(data['raw']), 'Day', 'salmon')    
     # Section 2: This section is for plotting 'week' mentions in subreddit
     with st.beta_expander("Frequency of Reported Duration by Week", expanded=True):
         st.markdown(''':chart: The graph is similar to days as we can infer two things from it:  
         :small_red_triangle: **First week** is reported more than half of the mentions; followed by **Week 2**, **3**, and **4**.  
         :small_red_triangle: Only first week seems to be the milestone among the authors.''')        
-    plot(get_week(data['raw']), 'Week', 'salmon')    
+    plot(pd.read_csv('rleaves_week.csv'), 'Week', 'salmon')    
     # Section 3: This section is for plotting 'month' mentions in subreddit
     with st.beta_expander("Frequency of Reported Duration by Month", expanded=True):
-        st.markdown('''![month](https://media.giphy.com/media/d1GpZTVp2eV7gQk8/giphy.gif)  
-        :small_red_triangle: First thing we notice, months are reported more than the weeks.  
+        st.markdown(''':small_red_triangle: First thing we notice, months are reported more than the weeks.  
         :small_red_triangle: First six months are significant milestones. After which the number drops off drastically.   
         :small_red_triangle: **Month 6** is mentioned more than **Month 1**. It could be because authors counted their abstinence by day.  ''')        
     plot(get_month(data['raw']), 'Month', 'salmon')    
@@ -138,8 +135,7 @@ def time(data):
     with st.beta_expander("Frequency of Reported Duration by Year* ", expanded=True):
         st.markdown(''':keycap_star: The number of *year* extracted is ambiguous.  
         :small_red_triangle: **Year** mentioned could be the age of the author.  
-        :small_red_triangle:  Or, number of years elapsed since the author has smoked.  
-        ![year](https://media.giphy.com/media/d3yxg15kJppJilnW/giphy.gif)''')        
+        :small_red_triangle:  Or, number of years elapsed since the author has smoked.''')        
     plot(get_year(data['raw']), 'Year', 'salmon')
     # Section 5: code for all the plots
     with st.beta_expander("Code"):
@@ -150,7 +146,8 @@ def emotions():
     with st.beta_expander("Detection Emotion In The Posts", expanded=True):
         st.markdown(''':bellhop_bell: Over the past few years, transfer learning has led to a new wave of state-of-the-art results in natural language processing (NLP). Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in NLP. One of the downstream task is text classification i.e. to classify a post as one of the emotion listed below. You can learn more about the model [here.](https://huggingface.co/mrm8488/t5-base-finetuned-emotion)   
         :bellhop_bell: [HuggingFace](https://huggingface.co/) is a leading open source platform in the NLP space which provides afformentioned models for our goal to detect emotion in r/leaves post.  
-        :bellhop_bell: Given the nature of the subreddit, it is no surprise to see most posts categorized as 'joy'. You may judge the accuracy of the model by selecting invidiual emotion below and read the random posts it populates. 
+        :bellhop_bell: Given the nature of the subreddit, it is no surprise to see most posts categorized as 'joy'. You may judge the accuracy of the model by selecting invidiual emotion below and read the random posts it populates.   
+        ![emotion](https://media.giphy.com/media/BpPxIRWtIkktG/giphy.gif)
         ''')  
     df = pd.read_csv('rleaves_emotion.csv', encoding='utf-8')
     emote = pd.DataFrame(df['emotion'].value_counts().reset_index())
@@ -183,10 +180,6 @@ def get_top_words(data, number):
     return top_words
 
 @st.cache()
-def day_to_week(df):
-    return df.groupby(pd.cut(df.iloc[:, 0], np.arange(0, df.iloc[:, 0].max(), 7))).sum()
-
-@st.cache()
 def get_day(series):
     day = list(series.str.findall(r'\d+\s*day[s\s]|\s*day\s*\d+'))
     day = [int(item) for item in re.findall(r'\d+', str(day))]
@@ -195,26 +188,7 @@ def get_day(series):
     day = day.loc[(day['day'] > 0) & (day['day'] < 31)]
     day['day'] = 'Day ' + day['day'].astype(str)
     day.sort_values(by='count', ascending=False, inplace=True) 
-    return day, day_week
-
-@st.cache()
-def get_week(series):
-    #global day_week
-    week = list(series.str.findall(r'\d+\s*week[s\s]|\s*week\s*\d+'))
-    week = [int(item) for item in re.findall(r'\d+', str(week))]
-    week = pd.DataFrame.from_dict(Counter(week), orient='index').rename(columns={0:'w_count'}).sort_index(ascending=True)
-    week = week[week.index < 35]
-    week.index = 'Week ' + week.index.astype(str)
-    day_week = day_to_week(get_day(series)[1])
-    day_week = day_week.drop(['day'], axis=1).reset_index(drop=True)
-    day_week = day_week[day_week['count'] > 1]
-    day_week.index = ['Week %s' %i for i in range(1, len(day_week) + 1)]
-    week = pd.concat([day_week, week], axis=1).fillna(0).reset_index()
-    week[['count','w_count']] = week[['count','w_count']].astype(int)
-    week['count'] = week['count'] + week['w_count']
-    week.sort_values(by='count', ascending=False, inplace=True)
-    week.drop(columns=['w_count'], inplace=True)
-    return week   
+    return day
 
 @st.cache()
 def get_month(series):
