@@ -6,11 +6,9 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 def main():
     rleaves = pd.read_csv('rleaves.csv', encoding='utf-8')
     rleaves = rleaves['raw']
-    rleaves = rleaves.apply(cleanup)
-    
+    rleaves = rleaves.apply(cleanup)    
     emotions = rleaves.apply(get_emotion)
-    emotions = emotions.str.replace('<pad> |</s>', '')
-    
+    emotions = emotions.str.replace('<pad> |</s>', '')    
     rleaves.name = 'post'
     emotions.name = 'emotion'
     rleaves_emotion = pd.concat([rleaves, emotions], axis=1)

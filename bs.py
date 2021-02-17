@@ -148,19 +148,22 @@ def time(data):
         st.code(inspect.getsource(plot), language='python')     
         
 def emotions():
-    #
-    with st.beta_expander("Emotion Detection", expanded=True):
-        st.markdown('''Hello''')  
+    # A bar chart of emotion distribution
+    with st.beta_expander("Detection Emotion In The Posts", expanded=True):
+        st.markdown(''':bellhop_bell: Over the past few years, transfer learning has led to a new wave of state-of-the-art results in natural language processing (NLP). Transfer learning, where a model is first pre-trained on a data-rich task before being fine-tuned on a downstream task, has emerged as a powerful technique in NLP. One of the downstream task is text classification i.e. to classify a post as one of the emotion listed below. You can learn more about the model [here.](https://huggingface.co/mrm8488/t5-base-finetuned-emotion)   
+        :bellhop_bell: [HuggingFace](https://huggingface.co/) is a leading open source platform in the NLP space which provides afformentioned models for our goal to detect emotion in r/leaves post.  
+        :bellhop_bell: Given the nature of the subreddit, it is no surprise to see most posts categorized as 'joy'. You may judge the accuracy of the model by selecting invidiual emotion below and read the random posts it populates. 
+        ''')  
     df = pd.read_csv('rleaves_emotion.csv', encoding='utf-8')
     emote = pd.DataFrame(df['emotion'].value_counts().reset_index())
     plot(emote, 'Emotions', 'teal')
-    #
+    # Displays the code I used to extract emotions
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("emotion_detection.py"), language='python')
     #
     color = st.radio('Select An Emotion', 
                              options=['Joy', 'Sadness', 'Anger', 'Fear', 'Surprise', 'Love'])
-    st.table(df['post'][df['emotion'] == color.lower()].head())    
+    st.table(df['post'][df['emotion'] == color.lower()].sample(5))    
         
 @st.cache(show_spinner=False)
 def get_file_content_as_string(path):
