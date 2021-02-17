@@ -26,7 +26,6 @@ def main():
     elif sidebar == "Authors":
         authors(df)
     elif sidebar == "Time":
-        st.sidebar.info('Please give few seconds for it to load.')
         time(df)
     elif sidebar == "Emotion":
         emotions()
@@ -39,6 +38,9 @@ def main():
         ''')
         st_disqus("saayedalam")
 
+    if st.sidebar.button('Show All Codes!'):
+        st.sidebar.info('Oops, still working on it!')
+
 def introduction():
     # Section 1: Introduction
     intro = st.beta_expander('Introduction', expanded=True)
@@ -46,7 +48,7 @@ def introduction():
     # Section 2: Word Cloud PNG
     image = Image.open('wordcloud_user_leaves.png')
     st.image(image, caption='Word Cloud of r/leaves', use_column_width=True)
-    with st.beta_expander("Code"):
+    with st.beta_expander("Code", expanded=False):
         st.code(get_file_content_as_string("rleaves_wc.py"), language='python')
         
 def posts(data):
@@ -155,7 +157,7 @@ def emotions():
     # Displays the code I used to extract emotions
     with st.beta_expander("Code"):
         st.code(get_file_content_as_string("emotion_detection.py"), language='python')
-    #
+    # Lets user select an emotion and display 5 random posts
     color = st.radio('Select An Emotion', 
                              options=['Joy', 'Sadness', 'Anger', 'Fear', 'Surprise', 'Love'])
     st.table(df['post'][df['emotion'] == color.lower()].sample(5))    
