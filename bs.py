@@ -1,12 +1,10 @@
 import re
 import urllib
 import inspect
-import textacy.ke
 import numpy as np
 import pandas as pd
 import streamlit as st
 import plotly.express as px
-from textacy import *
 from PIL import Image
 from collections import Counter
 from streamlit_disqus import st_disqus
@@ -84,9 +82,9 @@ def posts(data):
         *YAKE! is a light-weight unsupervised automatic keyword extraction method which rests on text statistical 
         features extracted from single documents to select the most important keywords of a text.*   
         :hourglass_flowing_sand: As we can see from the table, time and marijuana are inseparable in r/leaves. :leaves:''')
-    st.table(get_top_ranked(data['raw']))    
+    st.table(pd.read_csv('rleaves_textrank.csv'))    
     with st.beta_expander("Code"):
-        st.code(inspect.getsource(get_top_ranked), language='python')  
+        st.code(get_file_content_as_string("rleaves_textrank.py"), language='python')  
         
 def authors(data):
     # Section 1: Some stats about the posters frequency of posts by day
@@ -183,14 +181,6 @@ def get_top_words(data, number):
     top_words = Counter(' '.join(data).split()).most_common(int(number))
     top_words = pd.DataFrame(top_words, columns=['word', 'count'])
     return top_words
-
-@st.cache(show_spinner=False)
-def get_top_ranked(data):
-    en = textacy.load_spacy_lang('en_core_web_sm')
-    text = ' '.join(data)
-    doc = textacy.make_spacy_doc(text, lang=en)
-    df = pd.DataFrame(textacy.ke.yake(doc, ngrams=2, window_size=4, topn=10)).rename(columns={0: "Most Important Keywords", 1: "YAKE! Score"})
-    return df
 
 @st.cache()
 def day_to_week(df):
